@@ -61,8 +61,8 @@ contract Rock is ERC1155/*, Royalties*/, Ownable {
     // Notre parc de biens immobilier
     RealEstate[] internal realEstatesCollection;
 
-    // Index du bien => tableau de Supply
-    mapping(uint256 => Card) internal supplyMaxCardType;
+    // Index du bien => tableau de cartes
+    mapping(uint256 => Card) internal cards;
 
     struct Card {
         uint256 cardId;
@@ -70,9 +70,6 @@ contract Rock is ERC1155/*, Royalties*/, Ownable {
         uint256 numberOfTokens;
         uint256 ratioOfTokensInPercent;
     }
-
-    // Index du bien => _(tokenIds => typeCardID)  (0, 1, 2 ou 3)
-    mapping(uint256 => mapping(uint256 => uint256)) internal tabTokenIdTypeCard;
 
     // Type de carte
     uint256 internal constant CARD_COTTAGE   = 0;
@@ -148,40 +145,32 @@ contract Rock is ERC1155/*, Royalties*/, Ownable {
     }
 
     // Calculer le nombre de token à minter par type de carte en fonction du prix du bien, du prix du token demandé par l'admin et du ratio (pourcentage du prix du bien)
-    function updateSupplyCards (uint256 _indexRealEstateInCollection, bool _isDefaultSupply, uint256 _ratioTokenCottage, uint256 _ratioTokenVilla, uint256 _ratioTokenMansion, uint256 _prixTokenCottage, uint256 _prixTokenVilla, uint256 _prixTokenMansion, uint256 _prixTokenHighRise) public onlyOwner {
+    function createCards (uint256 _indexRealEstateInCollection, bool _isDefaultSupply, uint256 _ratioTokenCottage, uint256 _ratioTokenVilla, uint256 _ratioTokenMansion, uint256 _prixTokenCottage, uint256 _prixTokenVilla, uint256 _prixTokenMansion, uint256 _prixTokenHighRise) public onlyOwner {
         require(_indexRealEstateInCollection <= realEstatesCollection.length, "Index du bien immobilier en dehors du tableau");
-        require(_ratioTokenCottage < 100 && _ratioTokenVilla < 100 && _ratioTokenMansion < 100, unicode"Erreur, un des pourcentages est a 0");
+        require(_ratioTokenCottage < 100 && _ratioTokenVilla < 100 && _ratioTokenMansion < 100, "Erreur, un des pourcentages est a 0");
 
         uint256 realEstatePrice = realEstatesCollection[_indexRealEstateInCollection].price;
 
-        uint256[4] memory nbTokensMaxByTypeCard;
-
-        // Si les ration ne sont pas renseignés, on prend les ration par défaut
+        // Si les ratios ne sont pas renseignés, on prend les ratios par défaut
         if(_ratioTokenCottage == 0 && _ratioTokenVilla == 0 && _ratioTokenMansion == 0) {
             _ratioTokenCottage = DEFAULT_RATIO_COTTAGE_TOKENS;
             _ratioTokenVilla = DEFAULT_RATIO_VILLA_TOKENS;
             _ratioTokenMansion = DEFAULT_RATIO_MANSION_TOKENS;
         } 
 
-        // Calcul de la suplly pour chaque type de carte
-        // nbTokensMaxByTypeCard[CARD_COTTAGE]   = calculeSupply(realEstatePrice, _prixTokenCottage, _ratioTokenCottage, _prixTokenHighRise);
-        // nbTokensMaxByTypeCard[CARD_VILLA]     = calculeSupply(realEstatePrice, _prixTokenVilla, _ratioTokenVilla, _prixTokenHighRise);
-        // nbTokensMaxByTypeCard[CARD_MANSION]   = calculeSupply(realEstatePrice, _prixTokenMansion, _ratioTokenMansion, _prixTokenHighRise);
-        // nbTokensMaxByTypeCard[CARD_HIGH_RISE] = 1;
-
-
-
         Card CottageCard = Card(CARD_COTTAGE, _prixTokenCottage, 0, _ratioTokenCottage);
-        Card VillagCard = Card(CARD_VILLA, _prixTokenVilla, 0, _ratioTokenVilla);
+        Card VillaCard = Card(CARD_VILLA, _prixTokenVilla, 0, _ratioTokenVilla);
         Card MansionCard = Card(CARD_MANSION, _prixTokenMansion, 0, _ratioTokenMansion);
         Card HighRiseCard = Card(CARD_HIGH_RISE, _prixTokenHighRise, 1, 0);
 
-        CottageCard.numberOfTokens = (realEstatePrice, _prixTokenCottage, _ratioTokenCottage, uint _prixTokenHighRise)
+        Card[4] memory _cards;
+        _cards.push(CottageCard);
+        _cards.push(VillaCard);
+        _cards.push(MansionCard);
+        _cards.push(HighRiseCard);
+        CalculateNumberOfToken(_cards, realEstatePrice, _prixTokenHighRise);
 
-
-
-
-        supplyMaxCardType[_indexRealEstateInCollection] = nbTokensMaxByTypeCard;
+        cards[_indexRealEstateInCollection] = _cards;
 
         emit supplyCardsCalculated(_indexRealEstateInCollection, nbTokensMaxByTypeCard[CARD_COTTAGE], nbTokensMaxByTypeCard[CARD_VILLA], nbTokensMaxByTypeCard[CARD_MANSION], nbTokensMaxByTypeCard[CARD_HIGH_RISE]);
     }
@@ -193,43 +182,47 @@ contract Rock is ERC1155/*, Royalties*/, Ownable {
     /// _tokenPrice : prix de la carte spécifiée par l'administrateur (ex : 50 €)
     /// _realEstatePriceRatio : Purcentage du prix du bien concerné (50%)
     /// SUr 50% du prix du bien (1 000 000 €), l'administrateur souhaite calculer le nombre de token de 50 € (supply)
-    function calculeSupply(uint256 _realEstatePrice, uint256 _tokenPrice, uint256 _realEstatePriceRatio, uint _prixTokenHighRise) public view onlyOwner returns (uint256){
+    function CalculateNumberOfToken(Card[4] _cards, uint _realEstatePrice, uint _prixTokenHighRise) public view onlyOwner {
         require(_realEstatePrice >= 50000, "Erreur, le prix minimum du bien immobilier est de 50000");
         require(_tokenPrice >= 50, "Erreur, le prix minimum de vente est 50");
         require(_realEstatePriceRatio <= 100, "Erreur, le pourcentage doit etre inferieur a 100 pourcents");
         
-        uint price = _realEstatePrice - (1 * _prixTokenHighRise); // Pour le calcul de la supply, on retire du prix du bien, le prix du token unique HighRise
-        uint ratioMultiplier = _realEstatePriceRatio * 100;
-        uint256 value = price * ratioMultiplier / 10000;
-        uint256 supplyToken = value / _tokenPrice;
+        // Pour le calcul de la supply, on retire du prix du bien, le prix du token unique HighRise
+        uint price = _realEstatePrice - (1 * _prixTokenHighRise); 
 
-        return supplyToken;
+        for(i = 0; i < cards.length; i++){
+            Card card = cards[i];
+            if(card.numberOfTokens == 0){
+                uint ratioMultiplier = card.ratioOfTokensInPercent * 100; // 50 % devient 5000
+                uint256 value = price * ratioMultiplier / 10000; // On applique le ratio sur le prix du prix et on divise  
+                uint256 numberOfTokens = value / _tokenPrice; // Prix du bien divisé par le prix du token
+                card.numberOfTokens = numberOfTokens;
+            }
+        }
     }
 
     // L'administrateur minte les NFTS d'une collection (d'un bien immo)
     function mintRealEstateCollection(uint _indexRealEstateInCollection) public onlyOwner {
 
         Mint(msg.sender, CARD_COTTAGE, _indexRealEstateInCollection);
-
         Mint(msg.sender, CARD_VILLA, _indexRealEstateInCollection);
-
         Mint(msg.sender, CARD_MANSION, _indexRealEstateInCollection);
-
         Mint(msg.sender, CARD_HIGH_RISE, _indexRealEstateInCollection);
 
         emit tokenMinted(_indexRealEstateInCollection);
     }
 
-    function Mint(address _contractOwner, uint256 typeCard, uint _indexRealEstateInCollection) private returns (uint256)
+    function Mint(address _contractOwner, uint256 _cardId, uint _indexRealEstateInCollection) private onlyOwner returns (uint256)
     {
-        _tokenIds.increment();
-        uint256 tokenId = _tokenIds.current();
+        require (_cardId >= CARD_COTTAGE && _cardId <= CARD_HIGH_RISE, "Carte inconnue");
 
-        // Tbleau qui permet de savoir à quel bien immobilier et à quelle carte est lié le tokenId (ex tokenId 8 => type Card HiGTRISE => bien n°2)  
-        tabTokenIdTypeCard[tokenId][typeCard] = _indexRealEstateInCollection;
+        _tokenIds.increment();
 
         // Mint des tokens pour un type de carte donné
-        _mint(_contractOwner, tokenId, supplyMaxCardType[_indexRealEstateInCollection][typeCard] , "");
+        Card[4] cards = cards[_indexRealEstateInCollection];
+        uint256 numberOfTokens = cards[_cardId].numberOfTokens;
+        cards.tokenId = _tokenIds.current();
+        _mint(_contractOwner, cards.tokenId, numberOfTokens, "");
 
         //_setTokenRoyalty(tokenId, msg.sender, 1000);
  
@@ -248,7 +241,6 @@ contract Rock is ERC1155/*, Royalties*/, Ownable {
         (,/*uint80 roundID*/ int price /*uint startedAt*/ /*uint timeStamp*/ /*uint80 answeredInRound*/,,,) = priceFeed.latestRoundData();
         return price;
     }
-
 }
 
 contract Marketplace is ERC1155, Rock {
@@ -285,31 +277,29 @@ contract Marketplace is ERC1155, Rock {
     // Exemple 
     function getTotalPriceInMatic(uint256 _amount){
         int lastprice = getLatestPrice();
-         if(lastprice > 0)
+        // if(lastprice > 0)
     }
     
     /// Fonction permettant d'acheter une ou plusieurs cartes NFT
     /// 
     /// _tokenId[] : les cartes achetées
     /// _amount[] : montants correspondants
-    function buy(address _from, address _recipient, uint256[] _tokenId, uint256[] _amount) public payable returns (uint256) {
+    function buy(address _from, address _recipient, uint256[] _cardsId, uint256[] _amounts, uint _indexRealEstateInCollection) public payable returns (uint256) {
         require (amount > 0, "Le montant doit etre superieur a 0");
         require(_recipient != address(0), "ERC1155: address zero is not a valid owner");
-        require (_tokenId >= 1 && _tokenId <= 4, "Carte inconnue");
+        require (_cardId >= CARD_COTTAGE && _cardId <= CARD_HIGH_RISE, "Carte inconnue");
+
+        // Liste des cartes du bien immo
+        cards = cards[_indexRealEstateInCollection]:
 
         // Calcul du nombre de tokens MATIC à nous reverser au total
         // 3 cartes COTTAGE de 50 € et 1 carte VILLA
         uint totalAmount;
-        for(uint carte = 1; carte <= 4; carte++){
-            uint id = _tokenId[carte];
-            uint amount = amount[carte];
-            totalAmount += 
-
+        for(uint i = 0; i <= _cardsId.length ; i++){
+            uint boughtCardId = _cardsId[i];
+            Card boughtCard =  cards[boughtCardId];
+            totalAmount += boughtCard.price * _amounts[i];
         }
-
-
-        montant par carte = il faut récupérer le prix de la carte _tokenId * 
-        montant toal = 
 
         // On vérifie que la balance de l'acheteur est supérieure ou égale à ce montant x
 
