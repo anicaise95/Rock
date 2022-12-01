@@ -61,7 +61,7 @@ contract Rock is ERC1155/*, Royalties*/, Ownable, ReentrancyGuard {
     }
     
     // Notre parc de biens immobilier
-    RealEstate[] internal realEstatesCollection;
+    RealEstate[] public realEstatesCollection;
 
     // Index du bien => tableau de cartes
     mapping(uint256 => Card[4]) internal cards;
@@ -170,7 +170,7 @@ contract Rock is ERC1155/*, Royalties*/, Ownable, ReentrancyGuard {
         newCards[CARD_COTTAGE] = Card(CARD_COTTAGE, 0, _prixTokenCottage, 0, _ratioTokenCottage);
         newCards[CARD_VILLA] = Card(CARD_VILLA, 0, _prixTokenVilla, 0, _ratioTokenVilla);
         newCards[CARD_MANSION] = Card(CARD_MANSION, 0, _prixTokenMansion, 0, _ratioTokenMansion);
-        newCards[CARD_MANSION] = Card(CARD_HIGH_RISE, 0, _prixTokenHighRise, 1, 0);
+        newCards[CARD_HIGH_RISE] = Card(CARD_HIGH_RISE, 0, _prixTokenHighRise, 1, 0);
 
         // Calcul du nombre de token par carte
         CalculateNumberOfToken(_indexRealEstateInCollection, realEstatePrice, _prixTokenHighRise);
@@ -191,11 +191,11 @@ contract Rock is ERC1155/*, Royalties*/, Ownable, ReentrancyGuard {
         uint realEstatePrice = _realEstatePrice - (1 * _prixTokenHighRise); 
         uint256 multiplier = 100;
 
-        for(uint i = 0; i < cards[_indexRealEstateInCollection].length; i++){
+        for(uint i = 0; i < CARD_HIGH_RISE; i++){
             Card storage card = cards[_indexRealEstateInCollection][i];
             if(card.numberOfTokens == 0){
                 uint ratioMultiplier = card.ratioOfTokensInPercent * multiplier; // 50 % devient 5000
-                uint256 priceByCard = realEstatePrice * ratioMultiplier / 100*multiplier; // On applique le ratio sur le prix du prix et on divise  
+                uint256 priceByCard = realEstatePrice * ratioMultiplier / (100*multiplier); // On applique le ratio sur le prix du prix et on divise  
                 uint256 numberOfTokens = priceByCard / card.price; // Prix du bien divisé par le prix du token
                 card.numberOfTokens = numberOfTokens;
             }
@@ -238,7 +238,7 @@ contract Rock is ERC1155/*, Royalties*/, Ownable, ReentrancyGuard {
     /**
      * Returns the latest price MATIC/USD
      */
-    function getLatestPrice() public view returns (uint) {
+    function getLatestPrice(uint256 _amount) public view returns (uint) {
         (
             uint80 roundID,
             int price,
@@ -248,7 +248,9 @@ contract Rock is ERC1155/*, Royalties*/, Ownable, ReentrancyGuard {
         ) = priceFeed.latestRoundData();
         uint8 decimals = priceFeed.decimals();
         uint _price = uint(price);
-        return _price/10**decimals;
+        return _price/(10**decimals);
+        //return _price;
+        // return _amount / maticPrice;
     }
 }
 
@@ -256,6 +258,8 @@ contract Marketplace is ERC1155, Rock {
 
     mapping (uint => sellList) public sales; 
     uint256 public salesId;
+
+    event CardPurchased(uint[] indexed tokenId, address nftAddress, address indexed seller, uint[] cardsId, uint[] quantities, uint256 totalPrice);
 
     struct sellList {
         address seller;
@@ -284,57 +288,61 @@ contract Marketplace is ERC1155, Rock {
     }
 
     // Exemple 
-    function getTotalPriceInMatic(uint256 _amount) public view returns (uint256) {
-        uint256 maticPrice = getLatestPrice();
-        return _amount / maticPrice;
+    function amountOfMATIC(uint256 _amount) public view returns (uint256) {
+        // uint256 maticPrice = getLatestPrice(_amount);
+        return 300;
     }
-    
-    /// Fonction permettant d'acheter une ou plusieurs cartes NFT
-    /// 
-    /// _tokenId[] : les cartes achetées
-    /// _amount[] : montants correspondants
-    function buy(address _from, address _recipient, uint256[] calldata _cardsId, uint256[] calldata _amounts, uint _indexRealEstateInCollection) public payable returns (uint256) {
-        require (_cardsId.length > 0, "Aucune carte selectionnee");
-        require (_amounts.length > 0, "Aucun montant renseigne");
-        require (_cardsId.length == _amounts.length, "Probleme dans les quantites et cartes a acheter : nombre de valeurs differentes");
-        require (_recipient != address(0), "ERC1155: address zero is not a valid owner");
-    
 
-        // Calcul du nombre de tokens MATIC à nous reverser au total
-        // 3 cartes COTTAGE de 50 € et 1 carte VILLA
+    // Cette fonction calcule le prix total des cartes achetées (en MATIC)
+    function calculeTotalPrice(uint256 _indexRealEstateInCollection, uint256[] calldata _cardsId, uint256[] calldata _amounts) public returns (uint256) {
+        require (_amounts.length > 0, "Aucun montant renseigne");
+        require (_cardsId.length > 0, "Aucun carte selectionnee");
+        require (_indexRealEstateInCollection < realEstatesCollection.length, "Bien immobilier inexistant");
+
+        // 3 cartes COTTAGE de 50 € et 1 carte VILLA à 100 € = 3 * 50 + 1 * 100 = 250 = totalAmount
         uint totalAmount;
-        for(uint i = 0; i <= _cardsId.length ; i++){
+
+        for(uint i = 0; i < _cardsId.length ; i++){
             require (_cardsId[i] >= CARD_COTTAGE && _cardsId[i] <= CARD_HIGH_RISE, "Carte inconnue");
-            require (_amounts.length > 0, "Aucun montant renseigne");
             uint boughtCardId = _cardsId[i];
-            Card memory boughtCard =  cards[_indexRealEstateInCollection][boughtCardId];
-            totalAmount += boughtCard.price * _amounts[i];
+            // amount = price * quantity
+            totalAmount += cards[_indexRealEstateInCollection][boughtCardId].price * _amounts[i];
         }
 
-        
-       // getTotalPriceInMatic
-        //safeBatchTransferFrom(_from, _recipient, _cardsId, amoubts, "")
-
-        
-        // On vérifie que la balance de l'acheteur est supérieure ou égale à ce montant x
-        
-
-        //  si balance suffisante
-        
-            // Première transaction pour débiter le wallet du montant x et nous le reverser sur le smartcontract
-
-            // Deuxième transaction pour lui transférer le nombre de _amount de _tokenId
-
-
-        // sinon 
-
-
-
+        // Calcul du nombre de tokens MATIC à nous reverser au total
+        return amountOfMATIC(totalAmount);
+    }
     
-        //if(lastprice > 0)
-         //   lastprice = lastprice / 1000 = 
-        //_safeTransferFrom(_from, _to, _id, _amount, "");
-        return totalAmount;
+    
+    /// Fonction permettant d'acheter une ou plusieurs cartes NFT
+    function buy(address _cardOwner, address _to, uint256[] calldata _cardsId, uint256[] calldata _quantities, uint _indexRealEstateInCollection) public payable returns (uint256) {
+        require (_cardsId.length > 0, "Aucune carte selectionnee");
+        require (_quantities.length > 0, "Aucune quantite de NFT renseignee");
+        require (_cardsId.length == _quantities.length, "Probleme dans les quantites et cartes a acheter : nombre de valeurs differentes");
+        require (_to != address(0), "ERC1155: address zero is not a valid owner");
+        require(_cardOwner != address(0), "You cannot order from this address!");
+        
+        // Calcul du prix total et on vérifie que la balance est suffisante pour procéder au transfert des tokens
+        uint256 totalPrice = calculeTotalPrice(_indexRealEstateInCollection, _cardsId, _quantities);
+        require(msg.value >= totalPrice, "Fonds insuffisants");
+        
+        // On approuve pour pouvoir valider le transfert
+        _setApprovalForAll(_cardOwner, _to, true);
+        
+        uint[] memory tokenIds;
+
+        for(uint i = 0; i < _cardsId.length; i++){
+            require(_quantities[i] > 0, "La quantite de token doit etre superieure a 0");
+            // Carte achetée
+            uint256 cardId = _cardsId[i];
+            // Token id correspondant
+            uint256 tokenId = cards[_indexRealEstateInCollection][cardId].tokenId;
+            tokenIds[i] = tokenId;
+            // Transfert de chaque carte au destinataire
+            safeTransferFrom(_cardOwner, _to, tokenId, _quantities[i], "");
+        }
+        
+        emit CardPurchased(tokenIds, _to, _cardOwner, _cardsId, _quantities, totalPrice);
     }
 
     function sell(address _from, address _to, uint256 _id, uint256 _amount) public payable returns (uint256) {
