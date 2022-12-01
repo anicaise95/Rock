@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/security/ReentrancyGuard.sol";
 
 interface IERC2981Royalties {
     function royaltyInfo(uint256 _tokenId, uint256 _value) external view  returns (address _receiver, uint256 _royaltyAmount);
@@ -38,7 +39,7 @@ contract Royalties is IERC2981Royalties, ERC165 {
     }
 }*/
 
-contract Rock is ERC1155/*, Royalties*/, Ownable {
+contract Rock is ERC1155/*, Royalties*/, Ownable, ReentrancyGuard {
 
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;
@@ -52,20 +53,22 @@ contract Rock is ERC1155/*, Royalties*/, Ownable {
     // Programme immo
     struct RealEstate {
         uint    id;
-        string name;        // Nom du programme immo
-        string location;    // Localisation 
-        string city;        // Ville
-        uint256 price;      // Prix du bien
+        string  name;           // Nom du programme immo
+        string  location;       // Localisation 
+        string  city;           // Ville
+        uint256 price;          // Prix du bien
+        uint256 numberOfLike;   // Taux d'influence
     }
     
     // Notre parc de biens immobilier
     RealEstate[] internal realEstatesCollection;
 
     // Index du bien => tableau de cartes
-    mapping(uint256 => Card) internal cards;
+    mapping(uint256 => Card[4]) internal cards;
 
     struct Card {
         uint256 cardId;
+        uint256 tokenId;
         uint256 price;
         uint256 numberOfTokens;
         uint256 ratioOfTokensInPercent;
@@ -135,7 +138,7 @@ contract Rock is ERC1155/*, Royalties*/, Ownable {
         newRealEstate.location      = _location;
         newRealEstate.city          = _city;
         newRealEstate.price         = _price;
-
+        
         // Ajout du bien au catalogue
         realEstatesCollection.push(newRealEstate);
 
@@ -148,31 +151,31 @@ contract Rock is ERC1155/*, Royalties*/, Ownable {
     function createCards (uint256 _indexRealEstateInCollection, bool _isDefaultSupply, uint256 _ratioTokenCottage, uint256 _ratioTokenVilla, uint256 _ratioTokenMansion, uint256 _prixTokenCottage, uint256 _prixTokenVilla, uint256 _prixTokenMansion, uint256 _prixTokenHighRise) public onlyOwner {
         require(_indexRealEstateInCollection <= realEstatesCollection.length, "Index du bien immobilier en dehors du tableau");
         require(_ratioTokenCottage < 100 && _ratioTokenVilla < 100 && _ratioTokenMansion < 100, "Erreur, un des pourcentages est a 0");
+        require(_prixTokenCottage >= 50, "Erreur, le prix minimum de la carte COTTAGE doit etre de 50");
+        require(_prixTokenVilla >= 100, "Erreur, le prix minimum de la carte VILLA doit etre de 100");
+        require(_prixTokenMansion >= 150, "Erreur, le prix minimum de la carte MANSION doit etre de 150");
 
+        // Bien immobilié tokenisé
         uint256 realEstatePrice = realEstatesCollection[_indexRealEstateInCollection].price;
 
-        // Si les ratios ne sont pas renseignés, on prend les ratios par défaut
+        // Si les ratios ne sont pas renseignés par l'administrateur, on prend les ratios par défaut
         if(_ratioTokenCottage == 0 && _ratioTokenVilla == 0 && _ratioTokenMansion == 0) {
             _ratioTokenCottage = DEFAULT_RATIO_COTTAGE_TOKENS;
             _ratioTokenVilla = DEFAULT_RATIO_VILLA_TOKENS;
             _ratioTokenMansion = DEFAULT_RATIO_MANSION_TOKENS;
         } 
 
-        Card CottageCard = Card(CARD_COTTAGE, _prixTokenCottage, 0, _ratioTokenCottage);
-        Card VillaCard = Card(CARD_VILLA, _prixTokenVilla, 0, _ratioTokenVilla);
-        Card MansionCard = Card(CARD_MANSION, _prixTokenMansion, 0, _ratioTokenMansion);
-        Card HighRiseCard = Card(CARD_HIGH_RISE, _prixTokenHighRise, 1, 0);
+        // Création des cartes
+        Card[4] storage newCards = cards[_indexRealEstateInCollection];
+        newCards[CARD_COTTAGE] = Card(CARD_COTTAGE, 0, _prixTokenCottage, 0, _ratioTokenCottage);
+        newCards[CARD_VILLA] = Card(CARD_VILLA, 0, _prixTokenVilla, 0, _ratioTokenVilla);
+        newCards[CARD_MANSION] = Card(CARD_MANSION, 0, _prixTokenMansion, 0, _ratioTokenMansion);
+        newCards[CARD_MANSION] = Card(CARD_HIGH_RISE, 0, _prixTokenHighRise, 1, 0);
 
-        Card[4] memory _cards;
-        _cards.push(CottageCard);
-        _cards.push(VillaCard);
-        _cards.push(MansionCard);
-        _cards.push(HighRiseCard);
-        CalculateNumberOfToken(_cards, realEstatePrice, _prixTokenHighRise);
+        // Calcul du nombre de token par carte
+        CalculateNumberOfToken(_indexRealEstateInCollection, realEstatePrice, _prixTokenHighRise);
 
-        cards[_indexRealEstateInCollection] = _cards;
-
-        emit supplyCardsCalculated(_indexRealEstateInCollection, nbTokensMaxByTypeCard[CARD_COTTAGE], nbTokensMaxByTypeCard[CARD_VILLA], nbTokensMaxByTypeCard[CARD_MANSION], nbTokensMaxByTypeCard[CARD_HIGH_RISE]);
+        emit supplyCardsCalculated(_indexRealEstateInCollection, newCards[CARD_COTTAGE].numberOfTokens, newCards[CARD_VILLA].numberOfTokens, newCards[CARD_MANSION].numberOfTokens, newCards[CARD_HIGH_RISE].numberOfTokens);
     }
 
     // Pour chaque bien immo, calcul du nombre de token à minter pour chaque type de carte 
@@ -182,20 +185,18 @@ contract Rock is ERC1155/*, Royalties*/, Ownable {
     /// _tokenPrice : prix de la carte spécifiée par l'administrateur (ex : 50 €)
     /// _realEstatePriceRatio : Purcentage du prix du bien concerné (50%)
     /// SUr 50% du prix du bien (1 000 000 €), l'administrateur souhaite calculer le nombre de token de 50 € (supply)
-    function CalculateNumberOfToken(Card[4] _cards, uint _realEstatePrice, uint _prixTokenHighRise) public view onlyOwner {
-        require(_realEstatePrice >= 50000, "Erreur, le prix minimum du bien immobilier est de 50000");
-        require(_tokenPrice >= 50, "Erreur, le prix minimum de vente est 50");
-        require(_realEstatePriceRatio <= 100, "Erreur, le pourcentage doit etre inferieur a 100 pourcents");
-        
-        // Pour le calcul de la supply, on retire du prix du bien, le prix du token unique HighRise
-        uint price = _realEstatePrice - (1 * _prixTokenHighRise); 
+    function CalculateNumberOfToken(uint256 _indexRealEstateInCollection, uint _realEstatePrice, uint _prixTokenHighRise) public onlyOwner {
 
-        for(i = 0; i < cards.length; i++){
-            Card card = cards[i];
+        // Pour le calcul du nombre de tokens par carte, on soustrait du prix du bien, le prix du token de la carte unique HighRise
+        uint realEstatePrice = _realEstatePrice - (1 * _prixTokenHighRise); 
+        uint256 multiplier = 100;
+
+        for(uint i = 0; i < cards[_indexRealEstateInCollection].length; i++){
+            Card storage card = cards[_indexRealEstateInCollection][i];
             if(card.numberOfTokens == 0){
-                uint ratioMultiplier = card.ratioOfTokensInPercent * 100; // 50 % devient 5000
-                uint256 value = price * ratioMultiplier / 10000; // On applique le ratio sur le prix du prix et on divise  
-                uint256 numberOfTokens = value / _tokenPrice; // Prix du bien divisé par le prix du token
+                uint ratioMultiplier = card.ratioOfTokensInPercent * multiplier; // 50 % devient 5000
+                uint256 priceByCard = realEstatePrice * ratioMultiplier / 100*multiplier; // On applique le ratio sur le prix du prix et on divise  
+                uint256 numberOfTokens = priceByCard / card.price; // Prix du bien divisé par le prix du token
                 card.numberOfTokens = numberOfTokens;
             }
         }
@@ -204,29 +205,29 @@ contract Rock is ERC1155/*, Royalties*/, Ownable {
     // L'administrateur minte les NFTS d'une collection (d'un bien immo)
     function mintRealEstateCollection(uint _indexRealEstateInCollection) public onlyOwner {
 
-        Mint(msg.sender, CARD_COTTAGE, _indexRealEstateInCollection);
-        Mint(msg.sender, CARD_VILLA, _indexRealEstateInCollection);
-        Mint(msg.sender, CARD_MANSION, _indexRealEstateInCollection);
-        Mint(msg.sender, CARD_HIGH_RISE, _indexRealEstateInCollection);
+        createNFTCard(msg.sender, CARD_COTTAGE, _indexRealEstateInCollection);
+        createNFTCard(msg.sender, CARD_VILLA, _indexRealEstateInCollection);
+        createNFTCard(msg.sender, CARD_MANSION, _indexRealEstateInCollection);
+        createNFTCard(msg.sender, CARD_HIGH_RISE, _indexRealEstateInCollection);
 
         emit tokenMinted(_indexRealEstateInCollection);
     }
 
-    function Mint(address _contractOwner, uint256 _cardId, uint _indexRealEstateInCollection) private onlyOwner returns (uint256)
+    function createNFTCard(address _contractOwner, uint256 _cardId, uint _indexRealEstateInCollection) private onlyOwner returns (uint256)
     {
         require (_cardId >= CARD_COTTAGE && _cardId <= CARD_HIGH_RISE, "Carte inconnue");
 
         _tokenIds.increment();
+        uint256 newTokenId = _tokenIds.current();
 
         // Mint des tokens pour un type de carte donné
-        Card[4] cards = cards[_indexRealEstateInCollection];
-        uint256 numberOfTokens = cards[_cardId].numberOfTokens;
-        cards.tokenId = _tokenIds.current();
-        _mint(_contractOwner, cards.tokenId, numberOfTokens, "");
+        uint256 numberOfTokens = cards[_indexRealEstateInCollection][_cardId].numberOfTokens;
+        cards[_indexRealEstateInCollection][_cardId].tokenId = newTokenId; 
+        _mint(_contractOwner, newTokenId, numberOfTokens, "");
 
         //_setTokenRoyalty(tokenId, msg.sender, 1000);
  
-        return tokenId;
+        return newTokenId;
     }    
 
     // Frais de transactions
@@ -237,9 +238,17 @@ contract Rock is ERC1155/*, Royalties*/, Ownable {
     /**
      * Returns the latest price MATIC/USD
      */
-    function getLatestPrice() public view returns (int) {
-        (,/*uint80 roundID*/ int price /*uint startedAt*/ /*uint timeStamp*/ /*uint80 answeredInRound*/,,,) = priceFeed.latestRoundData();
-        return price;
+    function getLatestPrice() public view returns (uint) {
+        (
+            uint80 roundID,
+            int price,
+            uint startedAt,
+            uint timeStamp,
+            uint80 answeredInRound
+        ) = priceFeed.latestRoundData();
+        uint8 decimals = priceFeed.decimals();
+        uint _price = uint(price);
+        return _price/10**decimals;
     }
 }
 
@@ -275,34 +284,40 @@ contract Marketplace is ERC1155, Rock {
     }
 
     // Exemple 
-    function getTotalPriceInMatic(uint256 _amount){
-        int lastprice = getLatestPrice();
-        // if(lastprice > 0)
+    function getTotalPriceInMatic(uint256 _amount) public view returns (uint256) {
+        uint256 maticPrice = getLatestPrice();
+        return _amount / maticPrice;
     }
     
     /// Fonction permettant d'acheter une ou plusieurs cartes NFT
     /// 
     /// _tokenId[] : les cartes achetées
     /// _amount[] : montants correspondants
-    function buy(address _from, address _recipient, uint256[] _cardsId, uint256[] _amounts, uint _indexRealEstateInCollection) public payable returns (uint256) {
-        require (amount > 0, "Le montant doit etre superieur a 0");
-        require(_recipient != address(0), "ERC1155: address zero is not a valid owner");
-        require (_cardId >= CARD_COTTAGE && _cardId <= CARD_HIGH_RISE, "Carte inconnue");
-
-        // Liste des cartes du bien immo
-        cards = cards[_indexRealEstateInCollection]:
+    function buy(address _from, address _recipient, uint256[] calldata _cardsId, uint256[] calldata _amounts, uint _indexRealEstateInCollection) public payable returns (uint256) {
+        require (_cardsId.length > 0, "Aucune carte selectionnee");
+        require (_amounts.length > 0, "Aucun montant renseigne");
+        require (_cardsId.length == _amounts.length, "Probleme dans les quantites et cartes a acheter : nombre de valeurs differentes");
+        require (_recipient != address(0), "ERC1155: address zero is not a valid owner");
+    
 
         // Calcul du nombre de tokens MATIC à nous reverser au total
         // 3 cartes COTTAGE de 50 € et 1 carte VILLA
         uint totalAmount;
         for(uint i = 0; i <= _cardsId.length ; i++){
+            require (_cardsId[i] >= CARD_COTTAGE && _cardsId[i] <= CARD_HIGH_RISE, "Carte inconnue");
+            require (_amounts.length > 0, "Aucun montant renseigne");
             uint boughtCardId = _cardsId[i];
-            Card boughtCard =  cards[boughtCardId];
+            Card memory boughtCard =  cards[_indexRealEstateInCollection][boughtCardId];
             totalAmount += boughtCard.price * _amounts[i];
         }
 
-        // On vérifie que la balance de l'acheteur est supérieure ou égale à ce montant x
+        
+       // getTotalPriceInMatic
+        //safeBatchTransferFrom(_from, _recipient, _cardsId, amoubts, "")
 
+        
+        // On vérifie que la balance de l'acheteur est supérieure ou égale à ce montant x
+        
 
         //  si balance suffisante
         
@@ -316,10 +331,10 @@ contract Marketplace is ERC1155, Rock {
 
 
     
-        if(lastprice > 0)
-            lastprice = lastprice / 1000 = 
-        _safeTransferFrom(_from, _to, _id, _amount, "");
-        return _amount;
+        //if(lastprice > 0)
+         //   lastprice = lastprice / 1000 = 
+        //_safeTransferFrom(_from, _to, _id, _amount, "");
+        return totalAmount;
     }
 
     function sell(address _from, address _to, uint256 _id, uint256 _amount) public payable returns (uint256) {
@@ -336,5 +351,10 @@ contract Marketplace is ERC1155, Rock {
     function fetchMyNfts() public view {
         //uint256[] memory ids;
         //balanceOfBatch(msg.sender, ids);
+    }
+
+    function withdraw() public onlyOwner {
+        require(address(this).balance > 0, "Balance a 0");
+        payable(owner()).transfer(address(this).balance);
     }
 }
