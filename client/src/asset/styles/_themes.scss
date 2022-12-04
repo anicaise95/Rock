@@ -24,7 +24,12 @@
 
 .card {
     border-radius: 20px;
-    background-color: white;
+    //background-color: white;
+}
+
+.contentCard {
+    max-width: 1130px;
+    width: 100%;
 }
 
 .text-primary {

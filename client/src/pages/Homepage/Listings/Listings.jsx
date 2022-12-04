@@ -5,15 +5,21 @@ export default function Listings() {
 
     return (
         <>
-            <ul className="d-flex p-20">
-                <li className="mr-3"><NavLink end to="" ><b>Catalogue immobilier</b></NavLink></li>
-                <li className="mr-3"><NavLink to="/marketplace" >Marketplace</NavLink></li>
-                <li className="mr-3"><NavLink to="/profile">Mon compte</NavLink></li>
-                <li className=""><NavLink to="/admin">Administration</NavLink></li>
-            </ul>
-            <div className='p-20'>
-                <h2 className='mn-20'>Accés aux listings</h2>
-                <Outlet />
+            <div className="flex-fill container d-flex flex-column p-20">
+                <div className={`card flex-fill d-flex flex-column p-20 mb-20 contentCard`}>
+                    <div className="card" >
+
+                        <ul className="d-flex p-20">
+                            <li className="mr-3"><NavLink end to="" ><b>Catalogue immobilier</b></NavLink></li>
+                            <li className="mr-3"><NavLink to="/marketplace" >Marketplace</NavLink></li>
+                            <li className="mr-3"><NavLink to="/profile">Mon compte</NavLink></li>
+                            <li className=""><NavLink to="/admin">Administration</NavLink></li>
+                        </ul>
+                        <div className='p-20'>
+                            <Outlet />
+                        </div>
+                    </div>
+                </div>
             </div>
         </>
     );

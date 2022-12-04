@@ -3,7 +3,7 @@ export default function MarketPlaceOverview() {
     return (
         <>
             <div className="card">
-                <h2>Catalogue des NFT disponibles</h2>
+                <h2>Descriptif du bien immobilier</h2>
             </div>
 
             <div className="card">
