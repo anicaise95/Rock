@@ -1,0 +1,16 @@
+.spinner {
+    font-size: 30px;
+    color: var(--primary);
+    animation: rotate 2s infinite;
+}
+
+// Révolution (de 0 à 360 degres) de l'image pendant 2sec de manière infinie
+@keyframes rotate {
+    from {
+        transform: rotate(0);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}

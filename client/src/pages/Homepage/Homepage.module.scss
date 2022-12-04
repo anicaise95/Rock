@@ -1,0 +1,49 @@
+@use '../../asset/styles/mixins' as mixin;
+
+// On veut 3 éléments sur 3 dans la grille
+/*.grid {
+
+    display: grid;
+    grid-template-columns: repeat(3, 350px); // 3 colonnes de 350px
+    grid-auto-columns: repeat(3, 350px); // si colonnes supllémentaires à afficher, on prévoit une autre ligne de 3 colonnes de 350px
+    gap: 20px; // Espacement entre les lignes
+    place-content: center; // Centrer le contenu des colonnes
+
+    @include mixin.lg-lt {
+        // Pour une taille < lg
+        grid-template-columns: repeat(2, 350px);
+        grid-auto-columns: repeat(2, 350px);
+    }
+
+    @include mixin.md-lt {
+        // Pour une taille < md 
+        grid-template-columns: 350px;
+        grid-auto-columns: 350px;
+    }
+
+    @include mixin.xs {
+        // Pour une taille XS, une seule image
+        grid-template-columns: 1fr;
+        grid-auto-columns: 1fr;
+    }
+}*/
+
+.button {
+    align-items: center;
+}
+
+.contentCard {
+    max-width: 1130px;
+    width: 100%;
+}
+
+.searchBar {
+    padding: 10px 15px;
+    border: 2px solid var(--gray-2);
+    border-radius: 20px;
+
+    input {
+        outline: 0;
+        border: 0;
+    }
+}

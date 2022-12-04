@@ -1,0 +1,32 @@
+// styles des boutons
+/*.btn {
+    padding: 5px 15px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: 0.2 s opacity;
+
+    &:hover {
+        opacity: 0.8;
+    }
+}
+
+.btn-primary {
+    background-color: var(--primary);
+    color: white;
+    border: 1px solid var(--primary);
+}
+
+.btn-reverse-primary {
+    background-color: white;
+    color: var(--primary);
+    border: 2px solid var(--primary);
+}*/
+
+.card {
+    border-radius: 20px;
+    background-color: white;
+}
+
+.text-primary {
+    color: var(--primary);
+}
