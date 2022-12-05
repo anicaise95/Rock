@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { Outlet } from 'react-router-dom';
@@ -10,9 +9,8 @@ import { Dialog } from 'primereact/dialog';
 import { classNames } from 'primereact/utils';
 
 import './../../asset/styles/primefaces/form.scss';
-import { countries } from './../../data/countries.json';
 
-export default function AdminPageAddRealEstate() {
+export default function AdminNFTCardConfiguration() {
 
     const [countries, setCountries] = useState([]);
     const [showMessage, setShowMessage] = useState(false);
@@ -59,7 +57,7 @@ export default function AdminPageAddRealEstate() {
         return isFormFieldValid(meta) && <small className="p-error">{meta.error}</small>;
     };
 
-    const dialogFooter = <div className="flex justify-content-center"><Button label="OK" className="p-button-text" autoFocus onClick={() => navigate('/admin/nftcardconfig')} /></div>;
+    const dialogFooter = <div className="flex justify-content-center"><Button label="OK" className="p-button-text" autoFocus onClick={() => navigate('/admin/fees')} /></div>;
 
     return (
         <>
@@ -90,11 +88,28 @@ export default function AdminPageAddRealEstate() {
 
                 <div className="flex justify-content-center">
                     <div className="card">
-                        <h5 className="text-center text-lg font-bold text-left">Etape 1/2 : Nouveau bien immobilier</h5>
+                        <h5 className="text-center">Nouveau bien immobilier</h5>
 
                         <Form onSubmit={onSubmit} initialValues={{ realEstateName: '', realEstateStreet: '', realEstateCity: '', realEstateCountry: 'FRANCE' }} validate={validate} render={({ handleSubmit }) => (
 
                             <form onSubmit={handleSubmit} className="p-fluid">
+
+
+                                <div class="formgrid grid">
+                                    <div class="field col">
+                                    </div>
+                                    <div class="field col">
+                                    </div>
+                                </div>
+
+                                <div class="formgroup-inline">
+                                    <div class="field">
+
+                                    </div>
+                                    <div class="field">
+
+                                    </div>
+                                </div>
 
                                 <Field name="realEstateName" render={({ input, meta }) => (
                                     <div className="field">

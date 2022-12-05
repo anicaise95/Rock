@@ -7,6 +7,7 @@ node_modules
 
 # Production
 build
+pinata
 
 # Testing
 coverage

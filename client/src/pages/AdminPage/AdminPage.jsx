@@ -10,22 +10,13 @@ export default function AdminPage() {
                     <div className="card" >
 
                         <div>
-                            <ul className="d-flex p-20">
-                                <li className="mr-3"><NavLink end to="/listings" >Retour au catalogue immobilier</NavLink></li>
+                            <ul className="d-flex pt-20">
+                                <li className="mr-3"><NavLink end to="/listings" >Catalogue immobilier</NavLink></li>
                                 <li className="mr-3"><NavLink end to="" ><b>Administration</b></NavLink></li>
-                                <li className="mr-3"><NavLink to="addrealestate">Ajouter un bien immobilier</NavLink></li>
-                                <li className=""><NavLink to="fees">Gestion des frais</NavLink></li>
-                            </ul>
-                        </div>
-                        <div>
-                            <ul className="d-flex p-20">
-                                <li className="mr-3"><NavLink end to="" ><b>Tableau de bord</b></NavLink></li>
-                                <li className="mr-3"><NavLink to="addrealestate">Ajouter un bien immobilier</NavLink></li>
-                                <li className=""><NavLink to="fees">Gestion des frais</NavLink></li>
                             </ul>
                         </div>
 
-                        <div className='p-20'>
+                        <div>
                             <Outlet />
                         </div>
                     </div>

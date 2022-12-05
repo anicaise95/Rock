@@ -1,4 +1,4 @@
-RocK = artifacts.require("Voting");
+RocK = artifacts.require("Rock");
 
 module.exports = function (deployer) {
   deployer.deploy(RocK);

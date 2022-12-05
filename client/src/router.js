@@ -4,7 +4,7 @@ import App from './App';
 import AdminPage from './pages/AdminPage/AdminPage';
 import AdminPageAddRealEstate from './pages/AdminPage/AdminPageAddRealEstate';
 import AdminPageFees from './pages/AdminPage/AdminPageFees';
-import AddRealEstate from './pages/AdminPage/AdminPageFees';
+import AdminNFTCardConfiguration from './pages/AdminPage/AdminNFTCardConfiguration';
 import AdminPageOverview from './pages/AdminPage/AdminPageOverview';
 
 import ErrorPage from './pages/ErrorPage/ErrorPage';
@@ -40,6 +40,10 @@ export const router = createBrowserRouter([
                     {
                         path: "addrealestate",
                         element: <AdminPageAddRealEstate />,
+                    },
+                    {
+                        path: "nftcardconfig",
+                        element: <AdminNFTCardConfiguration />,
                     },
                     {
                         path: "fees",
