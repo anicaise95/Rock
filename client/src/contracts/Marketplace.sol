@@ -1,4 +1,4 @@
-    // SPDX-License-Identifier: MIT
+  // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
@@ -15,14 +15,7 @@ contract Marketplace is Rock {
     // Events
     event CardPurchased(uint256[] indexed tokenId, address indexed buyer, address indexed seller, uint256[] cardsId, uint256[] quantities, uint256 totalPrice);
     
-    // Dans le cadre d'une vendre, si Alice achete 2 cartes COTTAGE à BOB, on vérifie que Bob détient bien ces 2 cartes
-    function verifyUserQuantityIsAvailable(uint256 _indexRealEstateInCollection, uint256 tokenId, address card0wnerAddress, uint256 askedQuantity) public view returns(bool) {
-        NFTCard storage userCard = usersCardsNfts[_indexRealEstateInCollection][tokenId][card0wnerAddress];
-        if(askedQuantity <= userCard.quantity){
-            return true;
-        } 
-        return false;
-    }
+
 
     // Cette fonction doit mettre à jour les differentes balances aprés un achat ou aprés une vente
     function updateBalances() private onlyOwner {
@@ -33,67 +26,83 @@ contract Marketplace is Rock {
 
     }
 
+    // Dans le cadre d'une vente, si Alice achete 2 cartes COTTAGE à BOB, on vérifie que Bob détient bien ces 2 cartes
+    function verifyUserQuantityIsAvailable(uint256 _indexRealEstateInCollection, uint256 tokenId, address sellerAddress, uint256 askedQuantity) public view returns(bool) {
+        NFTCard storage userCard = usersCardsNfts[_indexRealEstateInCollection][tokenId][sellerAddress];
+        if(askedQuantity <= userCard.quantity){
+            return true;
+        } 
+        return false;
+    }
+
     /// Fonction permettant d'acheter une ou plusieurs cartes NFT
-    function buy (uint256[] calldata _cardsId, uint256[] calldata _quantities, uint _indexRealEstateInCollection) external payable {
-        require (_cardsId.length > 0, "Aucune carte selectionnee");
-        require (_quantities.length > 0, "Aucune quantite de NFT renseignee");
-        require (_cardsId.length == _quantities.length, "Probleme dans les quantites et cartes a acheter : nombre de valeurs differentes");
+    function confirmBuy (uint256[] calldata _cardsId, uint256[] calldata _quantities, uint _indexRealEstateInCollection) external payable {
+        require (_cardsId.length > 0 && _quantities.length > 0 && _cardsId.length == _quantities.length, "Incoherence entre les cartes choisies et les quantites renseignees");
         require(msg.sender != address(0), "You cannot order from this address!");
-        
-        // Calcul du prix total et on vérifie que la balance est suffisante pour procéder au transfert des tokens
-        // uint256 totalPrice = calculeTotalPrice(_indexRealEstateInCollection, _cardsId, _quantities);
-        uint256 totalPrice = 2;
+
         address buyer = payable(msg.sender);
         address seller = payable(owner());
 
-        require(msg.value >= totalPrice, "Fonds insuffisants");
-        
-        // L'acheteur envoie 2 ethers au propiétaire du NFT
-        //sendFunds(seller, msg.value);
-        (bool sentToPlatform,) = payable(seller).call{value: totalPrice}('');
-        require(sentToPlatform,"failed to pay the transaction to contract");
-
-
         uint256[] memory tokenIds;
-
+        bool amountAvailable = false;
         for(uint i = 0; i < _cardsId.length; i++){
             require(_quantities[i] > 0, "La quantite de token doit etre superieure a 0");
             // Carte achetée
             uint256 cardId = _cardsId[i];
-            // Token id correspondant
+            // Token id correspondant pour pouvoir etre transfert a l'acheteur
             uint256 tokenId = cards[_indexRealEstateInCollection][cardId].tokenId;
-            tokenIds[i] = tokenId;
+            
+            // Vérification de la balance du vendeur
+            amountAvailable = verifyUserQuantityIsAvailable(_indexRealEstateInCollection, tokenId, seller, _quantities[i]);
+            require(amountAvailable, "La quantite de tokens detenue est insuffisante");
         }
+        
+        // Calcul du prix total et on vérifie que la balance est suffisante pour procéder au transfert des tokens
+        // uint256 totalPrice = calculeTotalPrice(_indexRealEstateInCollection, _cardsId, _quantities);
+        uint256 totalPrice = 2;
+        require(msg.value >= totalPrice, "Fonds insuffisants");
 
-        // Transfert de chaque carte au destinataire
+        // L'acheteur (msg.sender) envoie 2 ethers au propiétaire du NFT
+        (bool sentToPlateform,) = payable(seller).call{value: msg.value}('');
+        // La transaction doit avoir reussi pour ontinuer le transfert des NFT
+        require(sentToPlateform, "Le paiement de la transaction vers le contrat a echoue");
+
+        // Transfert des tokens vers l'acheteur
         safeBatchTransferFrom(seller, buyer, tokenIds, _quantities, "");
+
+        // MAJ des balances
+        for(uint i = 0; i < tokenIds.length; i++) {
+            // Mise à jour de la balance du vendeur
+            NFTCard storage sellerTokens = usersCardsNfts[_indexRealEstateInCollection][tokenIds[i]][seller];
+            sellerTokens.quantity -= _quantities[i];
+            sellerTokens.seller = payable(seller);
+            sellerTokens.owner = payable(buyer);
+
+            // Mise à jour de la balance de l'acheteur
+            NFTCard storage buyTokens = usersCardsNfts[_indexRealEstateInCollection][tokenIds[i]][buyer];
+            buyTokens.quantity += _quantities[i];
+            buyTokens.seller = payable(buyer);
+            buyTokens.owner = payable(buyer);
+        }
         
         emit CardPurchased(tokenIds, buyer, seller, _cardsId, _quantities, totalPrice);
     }
 
-    function sell (address _from, address _to, uint256 _id, uint256 _amount) public payable returns (uint256) {
-       
-        // Versement des royalties de 8% à ROCK pour chaque NFT vendu
-        /*_setTokenRoyalty(newTokenId, msg.sender, 8000);
+    function sellTokens (address _from, address _to, uint256 _id, uint256 _amount) public returns (uint256) {
 
-        uint amountToSeller = msg.value*(1-(platformFee/1000));
-        uint amountToPlatform = msg.value*(platformFee/1000);
+        // Une vente peut être réalisée si les tokens detenus par le vendeur ont plus de 6 mois ?
 
-        (bool sentToSeller,) = payable(_seller).call{value:amountToSeller}("");
-        require(sentToSeller,"failed to pay the transaction to seller");
-        
-        (bool sentToPlatform,) = payable(address(this)).call{value:amountToPlatform}("");
-        require(sentToPlatform,"failed to pay the transaction to contract");
-
-        _safeTransferFrom(_from, _to, _id, _amount, "");*/
         return 0;
     }
 
     function fetchAll () public view {
-        
+      
     }
 
     function fetchMyNfts () public view {
 
     }
+
+    // Le contrat pourra recevoir des fonds
+    receive() external payable {}
 }
