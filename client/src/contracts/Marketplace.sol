@@ -1,4 +1,4 @@
-  // SPDX-License-Identifier: MIT
+    // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
@@ -11,19 +11,6 @@ import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contr
 import "./Rock.sol";
 
 contract Marketplace is Rock {
-
-    mapping (uint => sellList) public sales; 
-    uint256 public salesId;
-
-    // Cartes en vente
-    struct sellList {
-        address seller;
-        address token;
-        uint256 tokenId;
-        uint256 amountOfToken;
-        uint256 price;
-        bool isSold;
-    }
 
     // Events
     event CardPurchased(uint256[] indexed tokenId, address indexed buyer, address indexed seller, uint256[] cardsId, uint256[] quantities, uint256 totalPrice);
@@ -46,12 +33,6 @@ contract Marketplace is Rock {
 
     }
 
-    // Envoyer des fonds à une adresse
-    /*function sendFunds(address _receiver, uint256 _amount) external payable {
-        (bool sentToPlatform,) = payable(_receiver).call{value: _amount}('');
-        require(sentToPlatform,"failed to pay the transaction to contract");
-    }*/
-
     /// Fonction permettant d'acheter une ou plusieurs cartes NFT
     function buy (uint256[] calldata _cardsId, uint256[] calldata _quantities, uint _indexRealEstateInCollection) external payable {
         require (_cardsId.length > 0, "Aucune carte selectionnee");
@@ -72,15 +53,6 @@ contract Marketplace is Rock {
         (bool sentToPlatform,) = payable(seller).call{value: totalPrice}('');
         require(sentToPlatform,"failed to pay the transaction to contract");
 
-        // Si la transaction est validée, on transfère les tokens
-                //_setApprovalForAll(cardOwner, recipient, true);
-
-        //address cardOwner = "???";
-        
-        // Calcul des frais pour la plateforme
-        //uint256 feesPrice = totalPrice * fees / 100;
-
-        // Reversement des frais à la plateforme
 
         uint256[] memory tokenIds;
 
@@ -118,11 +90,10 @@ contract Marketplace is Rock {
     }
 
     function fetchAll () public view {
-        // TODO
+        
     }
 
     function fetchMyNfts () public view {
-        //uint256[] memory ids;
-        //balanceOfBatch(msg.sender, ids);
+
     }
 }
