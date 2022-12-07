@@ -9,21 +9,22 @@ function Header() {
 
     const { state: { contract, accounts, networkID } } = useEth();
 
-    console.log('networkID : ' + networkID);
-    console.log('accounts : ' + accounts);
-    console.log('contract : ' + contract);
-
     if (networkID == null && accounts == null) {
         console.log("Vous n'êtes pas connecté à Metamask");
-        console.log(networkID);
-        console.log(accounts);
     } else {
-        if (networkID != '80001') {
-            document.getElementById('errorWallet').innerHTML = "Attention, vous devez vous connecter sur le réseau Polygon !";
-        } else {
-            document.getElementById('errorWallet').innerHTML = "Réseau POLYGON connecté";
+        if (networkID != '5' || networkID != '1670349913987') {
+            document.getElementById('errorWallet').innerHTML = "Attention, vous devez vous connecter sur le réseau Ethereum !";
         }
-        if (accounts != null) {
+
+        if (networkID == '5' || networkID == '1670349913987') {
+            if (networkID == '1670349913987') {
+                document.getElementById('errorWallet').innerHTML = "Connecté au réseau Ethereum (Ganache)";
+            }
+            if (networkID == '5') {
+                document.getElementById('errorWallet').innerHTML = "Connecté au réseau Ethereum (Goerli)";
+            }
+        }
+        if (accounts[0] != null) {
             document.getElementById('wallet').innerHTML = accounts[0];
         }
     }

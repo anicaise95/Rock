@@ -7,4 +7,4 @@ export const ApiContext = createContext('https://restapi.fr/api/recipes');
 export const Owner = "0x0e977eA26E7C528109B0Ac6E3dAAa87967b71ca6";
 
 // isOwner
-export const IsOwner = false;
+export const owner = "0x355638a4eCcb777794257f22f50c289d4189F245";

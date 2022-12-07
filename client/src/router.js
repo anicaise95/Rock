@@ -6,7 +6,7 @@ import AdminPageAddRealEstate from './pages/AdminPage/AdminPageAddRealEstate';
 import AdminPageFees from './pages/AdminPage/AdminPageFees';
 import AdminNFTCardConfiguration from './pages/AdminPage/AdminNFTCardConfiguration';
 import AdminPageOverview from './pages/AdminPage/AdminPageOverview';
-
+import Homepage from './pages/Homepage/Homepage';
 import ErrorPage from './pages/ErrorPage/ErrorPage';
 import Listings from './pages/Homepage/Listings/Listings';
 import ListingsOne from './pages/Homepage/Listings/ListingsOne';
@@ -16,9 +16,6 @@ import MarketPlaceOverview from './pages/Homepage/Marketplace/MarketplaceOvervie
 import MyNfts from './pages/Homepage/Profile/MyNFTs';
 import Profile from './pages/Homepage/Profile/Profile';
 
-const HomePage = lazy(() => import('./pages/Homepage/Homepage'));
-const Admin = lazy(() => import('./pages/AdminPage/AdminPageFees'));
-
 export const router = createBrowserRouter([
     {
         path: '/',
@@ -27,7 +24,7 @@ export const router = createBrowserRouter([
         children: [
             {
                 index: true, // = path : '/'
-                element: <HomePage />,
+                element: <Homepage />,
             },
             {
                 path: 'admin',

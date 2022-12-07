@@ -4,7 +4,7 @@ pragma solidity 0.8.17;
 import "../node_modules/@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "../node_modules/@openzeppelin/contracts/token/common/ERC2981.sol";
 import "../node_modules/@openzeppelin/contracts/utils/Counters.sol";
-import "../node_modules/@openzeppelin/contracts/utils/introspection/ERC165.sol";
+//import "../node_modules/@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "../node_modules/@openzeppelin/contracts/access/Ownable.sol";
 import "../node_modules/@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../node_modules/@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
@@ -25,9 +25,8 @@ contract Rock is ERC1155, ERC2981, Ownable, ReentrancyGuard {
         string name; // Nom du programme immo
         string location; // Localisation
         string city; // Ville
-        string country;
+        string cid;
         uint256 price; // Prix du bien
-        uint256 numberOfLike; // Taux d'influence
     }
 
     // Notre parc de biens immobilier
@@ -89,14 +88,15 @@ contract Rock is ERC1155, ERC2981, Ownable, ReentrancyGuard {
 
     constructor()
         ERC1155(
-            "https://gateway.pinata.cloud/ipfs/QmYF4vRAZg19ARiSFoXevZYkf9Zp1yVdgXhh4x22bypMc4/{id}.json"
+            "https://gateway.pinata.cloud/ipfs/QmWQ5gbDhF59vongSgmQJMYRiiVpXmduYAU9gffwDTwnca/{id}.json"
         )
     {
         // Royalties sur chaque NFT vendu
         _setDefaultRoyalty(msg.sender, 8000);
         // Data Feed Chainlink pour récupérer le MATIC/USD
         priceFeed = AggregatorV3Interface(
-            0xd0D5e3DB44DE05E9F294BB0a3bEEaF030DE24Ada
+            // 0xd0D5e3DB44DE05E9F294BB0a3bEEaF030DE24Ada
+            0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e //ETHUSD
         );
     }
 
@@ -116,7 +116,7 @@ contract Rock is ERC1155, ERC2981, Ownable, ReentrancyGuard {
         string memory _name,
         string memory _location,
         string memory _city,
-        string memory _country,
+        string memory _cid,
         uint256 _price
     ) public onlyOwner {
         require(
@@ -132,8 +132,8 @@ contract Rock is ERC1155, ERC2981, Ownable, ReentrancyGuard {
             "La ville est obligatoire"
         );
         require(
-            keccak256(abi.encode(_country)) != keccak256(abi.encode("")),
-            "Le pays est obligatoire"
+            keccak256(abi.encode(_cid)) != keccak256(abi.encode("")),
+            "Le cid est obligatoire"
         );
         require(
             _price > 50000,
@@ -148,7 +148,7 @@ contract Rock is ERC1155, ERC2981, Ownable, ReentrancyGuard {
         newRealEstate.name = _name;
         newRealEstate.location = _location;
         newRealEstate.city = _city;
-        newRealEstate.country = _country;
+        newRealEstate.cid = _cid;
         newRealEstate.price = _price;
 
         // Ajout du bien au catalogue
@@ -157,6 +157,12 @@ contract Rock is ERC1155, ERC2981, Ownable, ReentrancyGuard {
         // Evenement RealEstateAdd avec position de l'élément dans le tableau
         uint256 indexRealEstateInCollection = _realEstateIds.current() - 1;
         emit RealEstateAdded(indexRealEstateInCollection);
+    }
+
+    /// @notice Return the count of proposals
+    /// @return uint256 Count of proposals
+    function getRealEstatesCollectionCount() external view returns (uint256) {
+        return realEstatesCollection.length;
     }
 
     // Récupération du bien immobilier par son index
@@ -350,6 +356,14 @@ contract Rock is ERC1155, ERC2981, Ownable, ReentrancyGuard {
         return newTokenId;
     }
 
+    function getCards(uint256 _indexRealEstateInCollection)
+        public
+        view
+        returns (Card[4] memory)
+    {
+        return cards[_indexRealEstateInCollection];
+    }
+
     // Retourne le prix total des cartes à payer (en MATIC)
     function calculeTotalPrice(
         uint256 _indexRealEstateInCollection,
@@ -417,5 +431,9 @@ contract Rock is ERC1155, ERC2981, Ownable, ReentrancyGuard {
         returns (uint256)
     {
         return getLatestPrice();
+    }
+
+    function getOwner() public view returns (address) {
+        return owner();
     }
 }
