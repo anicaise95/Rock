@@ -356,12 +356,13 @@ contract Rock is ERC1155, ERC2981, Ownable, ReentrancyGuard {
         return newTokenId;
     }
 
-    function getCards(uint256 _indexRealEstateInCollection)
+    function getCard(uint256 _indexRealEstateInCollection, uint256 _cardId)
         public
         view
-        returns (Card[4] memory)
+        returns (Card memory)
     {
-        return cards[_indexRealEstateInCollection];
+        Card memory card = cards[_indexRealEstateInCollection][_cardId];
+        return card;
     }
 
     // Retourne le prix total des cartes à payer (en MATIC)

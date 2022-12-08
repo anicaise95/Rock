@@ -290,10 +290,9 @@ export default function AdminNFTCardConfiguration() {
 
                                             <div id='buttonNextStep'>
                                                 <NavLink end to='/admin' >
-                                                    <Button label="Passer à la configuration des NFT >>" className="mt-2" />
+                                                    <Button label="Retour au tableau de bord >>" className="mt-2" />
                                                 </NavLink>
                                             </div>
-
                                         </form>
                                     )} />
                                 </div>
@@ -302,9 +301,6 @@ export default function AdminNFTCardConfiguration() {
                     </div>
                 </div>
             </div>
-
-
-
         </>
     );
 }

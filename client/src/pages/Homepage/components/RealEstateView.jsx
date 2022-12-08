@@ -1,24 +1,112 @@
-import React from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Card } from 'primereact/card';
 import { Button } from 'primereact/button';
+import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
+import { Toast } from 'primereact/toast';
 import './../../../../src/asset/styles/primefaces/card.scss'
+import useEth from "./../../../contexts/EthContext/useEth";
+import { Navigate, NavLink } from 'react-router-dom';
 
 export default function RealEstateView(props) {
 
+    const { state: { contract, accounts, web3 } } = useEth();
+
     const realEstateParam = props.realEstate;
     const action = props.buttonAction;
-    const cards = props.cardsArray;
+
+    const infosCards = props.infosCards;
+    console.log('infosCards (dans RealEstateView) :' + infosCards);
+
     const indexRealEstate = props.realEstate.id - 1;
 
-    console.log('cards : ' + props.cardsArray);
+    const [visible, setVisible] = useState(false);
+    const toast = useRef(null);
 
-    console.log('Je rentre dans le composant RealEstateView');
-    console.log('realEstate : ' + props.realEstate);
+
+
+
     const subtitle = realEstateParam.city + '-' + realEstateParam.price + ' €'
+    const navigateToRealEstateView = 'view/' + indexRealEstate;
+
+
+
+    // -------------- DIALOG -----------------------------
+
+    function confirmMint() {
+
+        //if (confirm("Minter ce bien")) {
+        mint(indexRealEstate);
+        //}
+    };
+
+    // ------------------- CHECK TRANSACTION --------------------
+
+    const [stateAddTransactionSuccess, setStateAddTransactionSuccess] = useState(0);
+
+    function checkTx(hash) {
+        let statusElement = document.getElementById("tx-status");
+        let hashElement = document.getElementById("tx-hash");
+
+        console.log("Waiting for tx : " + hash);
+        statusElement.innerHTML = "Waiting ...";
+        hashElement.innerHTML = hash;
+
+        let interval = setInterval(() => {
+            web3.eth.getTransactionReceipt(hash, (err, receipt) => {
+                setStateAddTransactionSuccess(1);
+                if (receipt) {
+                    if (receipt.status === true) {
+                        console.log(receipt);
+                        statusElement.innerHTML = "Success";
+                        statusElement.className = 'text-green-600 font-bold';
+                        setStateAddTransactionSuccess(2);
+                    } else if (receipt.status === false) {
+                        console.log("Transaction failed");
+                        statusElement.innerHTML = "Failed";
+                        statusElement.className = 'text-red-500 font-bold';
+                        setStateAddTransactionSuccess(3);
+                    }
+                    if (err) {
+                        console.log(err);
+                    }
+                    clearInterval(interval)
+                }
+            })
+        }, 1000)
+    }
+
+    /* 
+    useEffect(() => {
+       document.getElementById('buttonAddSubmit').hidden = true;
+        document.getElementById('buttonNextStep').hidden = true;
+        if (stateAddTransactionSuccess == 0) {
+            document.getElementById('buttonAddSubmit').hidden = false;
+            document.getElementById('buttonNextStep').hidden = true;
+        }
+        if (stateAddTransactionSuccess == 2) {
+            document.getElementById('buttonAddSubmit').hidden = true;
+            document.getElementById('buttonNextStep').hidden = false;
+        }
+    }, [stateAddTransactionSuccess]);
+    */
+
+    async function mint(indexRealEstate) {
+        try {
+            await contract.methods.mintRealEstateCollection(indexRealEstate).send({ from: accounts[0] })
+                .on('transactionHash', function (hash) {
+                    console.log(hash);
+                    checkTx(hash);
+                });
+
+        } catch (error) {
+            //alert(error);
+        }
+    };
 
     const header = (
-        <img alt="Card" src={realEstateParam.cid} onError={(e) => e.target.src = 'https://www.primefaces.org/wp-content/uploads/2020/05/placeholder.png'} />
+        <img alt="Card" src={realEstateParam.cid} onError={(e) => e.target.src = 'https://media.tenor.com/Tu0MCmJ4TJUAAAAM/load-loading.gif'} />
     );
+
 
     const footer = (
         <span>
@@ -27,15 +115,18 @@ export default function RealEstateView(props) {
                     <>
                         {
                             action === 'minter' &&
-                            <Button label="Minter" icon="pi pi-check" />
+                            <Button onClick={confirmMint} icon="pi pi-check" label="Minter" />
+                        }
+                        {
+                            action === 'consulter' &&
+                            <NavLink to={navigateToRealEstateView}>
+                                <Button onClick="" icon="pi pi-check" label="Investir à partir de 50 €" />
+                            </NavLink>
                         }
                     </>
                 }
                 {
-                    action === 'voir' &&
-                    <Button label="Investir" icon="pi pi-check" />
-                }
-                {
+                    action !== 'consulter' &&
                     <Button label="Modifier" icon="pi pi-times" className="p-button-secondary ml-2" />
                 }
             </>
@@ -43,16 +134,28 @@ export default function RealEstateView(props) {
     );
 
     return (
-        <div className='p-20'>
-            <Card title={realEstateParam.name}
-                subTitle={subtitle}
-                style={{ width: '23em' }}
-                footer={footer}
-                header={header}>
-                <p className="m-0" style={{ lineHeight: '1.5' }}>
-                    <span>{realEstateParam.location}</span>
-                </p>
-            </Card>
-        </div >
+        <>
+            {
+                <div className='p-20'>
+                    <Card title={realEstateParam.name}
+                        subTitle={subtitle}
+                        style={{ width: '23em' }}
+                        footer={footer}
+                        header={header}>
+                        <p className="m-0" style={{ lineHeight: '1.5' }}>
+                            <span>{realEstateParam.location}</span>
+                        </p>
+                    </Card>
+                    {
+                        action === 'minter' &&
+                        <div id="bloc-tx" className="field">
+                            <span>Hash de la transaction : </span><span id='tx-hash'></span>
+                            <br />
+                            <span>Statut : </span><span id='tx-status' className='text-gray-600 font-bold'></span>
+                        </div>
+                    }
+                </div >
+            }
+        </>
     )
 }

@@ -1,76 +1,109 @@
-import { NavLink } from "react-router-dom";
-import NICEview from "../../../asset/images/realsrestates/NICE_petit.JPG";
-import { Card } from 'primereact/card';
+import React, { useEffect, useState, useParams } from 'react';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
+import useEth from "../../../contexts/EthContext/useEth";
+import RealEstateView from '../../Homepage/components/RealEstateView';
 
 export default function ListingsOverview() {
 
-    const id = 1;
+    const { state: { contract, accounts, web3 } } = useEth();
+
+    const [realEstateArray, setRealEstateArray] = useState([]);
+    const [realEstateCount, setRealEstateCount] = useState([]);
+    const [mintedRealEstateCount, setMintedRealEstateCount] = useState([]);
+
+    const [infosCards, setInfosCards] = useState({});
+    const [uri, setURI] = useState([]);
+    const [isRealEstateMinted, setIsRealEstateMinted] = useState(false);
+
+    const action = "consulter";
+
+    useEffect(() => {
+        if (contract != null) {
+            fetchRealEstatesCollection();
+        }
+    }, [contract, realEstateCount, mintedRealEstateCount]);
+
+    async function fetchRealEstatesCollection() {
+        try {
+            // On recupére le nombre d'élements dans le tableau
+            const count = await contract.methods.getRealEstatesCollectionCount().call({ from: accounts[0] });
+            setRealEstateCount(count);
+            console.log("Nombre de biens immobiliers gérés par ROCK : " + count);
+
+            const realEstateArray = Array();
+            for (let index = 0; index < count; index++) {
+                realEstateArray.push(await contract.methods.realEstatesCollection(index).call({ from: accounts[0] }));
+                // Liste des biens mintés (pour les afficher)
+                const isRealEstateMinted = Array();
+                setIsRealEstateMinted(isRealEstateMinted);
+                fetchCard(index);
+            }
+            console.log("Liste des biens immobiliers : " + realEstateArray);
+            setRealEstateArray(realEstateArray);
+        } catch (error) {
+            // alert(error);
+        }
+    };
+
+    // Récupération des informations sur les cartes NFT
+    async function fetchCard(indexRealEstate) {
+        try {
+            const carteCottage = await contract.methods.getCard(indexRealEstate, 0).call({ from: accounts[0] });
+            const carteVilla = await contract.methods.getCard(indexRealEstate, 1).call({ from: accounts[0] });
+            const carteMansion = await contract.methods.getCard(indexRealEstate, 2).call({ from: accounts[0] });
+            const carteHighRise = await contract.methods.getCard(indexRealEstate, 3).call({ from: accounts[0] });
+
+            // On considere que le bien n'a pas été tokenisé si la carte n'a pas de tokenID et que sa balance est à 0
+            // On ne fait le test que sur la carte cottage (c'est suffisant)
+            let minted = false;
+            let count = 0;
+            if (carteCottage.tokenId > 0 && carteCottage.balance > 0) {
+                minted = true;
+                count++;
+            }
+            setMintedRealEstateCount(count);
+            console.log('mintedRealEstateCount : ' + mintedRealEstateCount);
+
+            // Pour bien immo, on conserve le resultat. Si le bien n'a pas été tokenisé (minté) le bien ne 
+            // doit pas être affiché
+            isRealEstateMinted[indexRealEstate] = minted;
+            setIsRealEstateMinted(isRealEstateMinted);
+            console.log('isRealEstateMinted[0] : ' + isRealEstateMinted[0]);
+
+            const cards = Array();
+            cards.push(carteCottage);
+            cards.push(carteVilla);
+            cards.push(carteMansion);
+            cards.push(carteHighRise);
+            setInfosCards(cards);
+
+        } catch (error) {
+            // alert(error);
+        }
+    };
 
     return (
         <>
-            <div className="card">
-                <h2>Accès aux listings</h2>
-            </div>
-            <div className="flex-fill container d-flex flex-column p-20">
-                <div className={`card flex-fill d-flex flex-column p-20 mb-20 contentCard`}>
-                    <div className="card" >
-
-                        <div className="flex flex-column card-container white-container">
-
-                            <div className="flex align-items-center bg-white justify-content-center h-15rem bg-white-500 font-bold text-black border-pink-100 hover:border-700 border-3 border-round m-2">
-                                <div class="card">
-                                    <div class="flex card-container blue-container overflow-hidden">
-                                        <div class="flex-none flex align-items-start justify-content-start bg-white-500 font-bold text-white m-2 px-5 py-3 border-round">
-                                            <img src={NICEview} alt="schema" />
-                                        </div>
-                                        <div class="flex-none w-32rem flex align-items-center justify-content-center font-bold text-white m-2 px-5 py-3 border-round">
-                                            <Card>
-                                                <div className='text-yellow-500 text-xl'>
-                                                    GRASSE - 1 120 000 €
-                                                </div>
-                                                <div className='text-yellow-800 pt-2'>
-                                                    Magnifique Villa de prestige en bord de mer
-                                                </div>
-                                                <div className='text-yellow-500 pt-4'>
-                                                    <NavLink to={`view/${id}`}>
-                                                        Votre NFT à partir de 50 €
-                                                    </NavLink>
-                                                </div>
-                                            </Card>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="flex align-items-start bg-white justify-content-start h-15rem bg-white-500 font-bold text-black border-pink-100 hover:border-700 border-3 border-round m-2">
-                                <div class="card">
-                                    <div class="flex card-container blue-container overflow-hidden">
-                                        <div class="flex-none flex align-items-start justify-content-start bg-white-500 font-bold text-white m-2 px-5 py-3 border-round">
-                                            <img src={NICEview} alt="schema" />
-                                        </div>
-                                        <div class="flex-none w-32rem flex align-items-center justify-content-center font-bold text-white m-2 px-5 py-3 border-round">
-                                            <Card>
-                                                <div className='text-yellow-500 text-xl'>
-                                                    NICE - 1 120 000 €
-                                                </div>
-                                                <div className='text-yellow-800 pt-2'>
-                                                    Magnifique Villa de prestige en bord de mer
-                                                </div>
-                                                <div className='text-yellow-500 pt-4'>
-                                                    Investissez en token à partir de 50 €
-                                                </div>
-                                            </Card>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="flex align-items-center bg-white justify-content-center h-15rem bg-white-500 font-bold text-black border-pink-100 hover:border-700 border-3 border-round m-2">
-
-                            </div>
-                        </div>
-
-                    </div>
+            <div class="card">
+                <div className='d-flex text-lg text-cyan-900 align-content-end justify-content-end pt-50'><b>{mintedRealEstateCount}  bien(s) immobilier(s)</b> actuellement disponible(s)</div>
+                <div class="grid">
+                    <>
+                        {
+                            realEstateArray.map((realEstate, index) => {
+                                return (
+                                    <>
+                                        {
+                                            index >= 0 && isRealEstateMinted[index] &&
+                                            <div key={index} class="col-4 p-3">
+                                                <RealEstateView realEstate={realEstate} uri={uri} infosCards={infosCards} buttonAction={action} />
+                                            </div>
+                                        }
+                                    </>
+                                )
+                            })
+                        }
+                    </>
                 </div>
             </div>
         </>

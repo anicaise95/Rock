@@ -1,48 +1,94 @@
 import { NavLink, useParams } from "react-router-dom";
+import React, { useEffect, useState } from 'react';
 import useEth from '../../../contexts/EthContext/useEth';
+import RealEstateView from "../components/RealEstateView";
+import NFTCard from "../components/NFTCard";
+
 
 export default function ListingsOne() {
 
     const { id } = useParams();
-    console.log('Identifiant du bien immobilier : ' + id);
 
-    const { state: { networkID, accounts } } = useEth();
+    const { state: { contract, accounts } } = useEth();
+    const [realEstate, setRealEstate] = useState({});
+    const [indexRealEstate, setIndexRealEstate] = useState(id);
+    const [infosCards, setInfosCards] = useState([]);
+    const [carteCottage, setCarteCottage] = useState({});
+    const [carteVilla, setCarteVilla] = useState({});
+    const [carteMansion, setCarteMansion] = useState({});
+    const [carteHighRise, setCarteHighRise] = useState({});
 
-    if (networkID == null && accounts == null) {
-        console.log("Vous n'êtes pas connecté à Metamask");
-    } else {
-        if (networkID != '80001' && accounts != null) {
-            document.getElementById('errorWallet').innerHTML = "Vous devez être connecté au réseau Polygon pour pouvoir pour accéder aux NFT";
-        } else {
-            document.getElementById('errorWallet').innerHTML = "";
+    const [uri, setURI] = useState([]);
+
+    useEffect(() => {
+        getUri();
+    }, [contract]);
+
+
+    useEffect(() => {
+        findRealEstateInCollection();
+    }, [contract]);
+
+    useEffect(() => {
+        fetchCard();
+    }, [contract]);
+
+    async function findRealEstateInCollection() {
+        try {
+            const realEstate = await contract.methods.getRealStateById(indexRealEstate).call({ from: accounts[0] });
+            setRealEstate(realEstate);
+            setIndexRealEstate(indexRealEstate);
+        } catch (error) {
+            //alert(error);
         }
-    }
+    };
+
+    // Récupération des informations sur les cartes NFT
+    async function fetchCard() {
+        try {
+            const carteCottage = await contract.methods.getCard(indexRealEstate, 0).call({ from: accounts[0] });
+            const carteVilla = await contract.methods.getCard(indexRealEstate, 1).call({ from: accounts[0] });
+            const carteMansion = await contract.methods.getCard(indexRealEstate, 2).call({ from: accounts[0] });
+            const carteHighRise = await contract.methods.getCard(indexRealEstate, 3).call({ from: accounts[0] });
+
+            setCarteCottage(carteCottage);
+            setCarteVilla(carteVilla);
+            setCarteMansion(carteMansion);
+            setCarteHighRise(carteHighRise);
+
+        } catch (error) {
+            //alert(error);
+        }
+    };
+
+    async function getUri() {
+        try {
+            const uri = await contract.methods.uri(indexRealEstate).call({ from: accounts[0] });
+            setURI(uri);
+        } catch (error) {
+            //alert(error);
+        }
+    };
 
     return (
         <>
-            <div className="card flex-fill d-flex justify-content-end">
-                <h2 className="text-base pr-2">Détail du bien</h2>
-            </div>
-            <div className="flex-fill container d-flex flex-column">
-                <div className={`card flex-fill d-flex flex-column mb-20 contentCard`}>
-                    <div className="card" >
-                        <div className="flex align-items-center bg-white justify-content-center h-15rem bg-white-500 font-bold text-black border-pink-100 hover:border-700 border-3 border-round m-2">
+            <div class="card">
+                <div class="formgrid grid">
+                    <div class="field col">
+                        <RealEstateView realEstate={realEstate} uri={uri} infosCards={infosCards} />
+                    </div>
 
-                        </div>
-                        <div className="flex align-items-center bg-white justify-content-center h-15rem bg-white-500 font-bold text-black border-pink-100 hover:border-700 border-3 border-round m-2">
-                            <div class="card">
-                                <div class="flex flex-wrap justify-content-center card-container blue-container gap-3">
-                                    <div class="border-round w-12rem h-6rem bg-blue-500 text-white font-bold flex align-items-center justify-content-center">1</div>
-                                    <div class="border-round w-12rem h-6rem bg-blue-500 text-white font-bold flex align-items-center justify-content-center">2</div>
-                                    <div class="border-round w-12rem h-6rem bg-blue-500 text-white font-bold flex align-items-center justify-content-center">3</div>
-                                    <div class="border-round w-12rem h-6rem bg-blue-500 text-white font-bold flex align-items-center justify-content-center">4</div>
+                    <div class="field col">
+                        <div className="form-demo">
+                            <div className="flex justify-content-center">
+                                <div className="card">
+                                    <h5 className="text-start">Investissez AUTREMENT avve ROCK</h5>
+                                    <div>
+                                        <NFTCard realEstate={realEstate} uri={uri} infosCards={infosCards} carteCottage={carteCottage} carteVilla={carteVilla} carteMansion={carteMansion} carteHighRise={carteHighRise} />
+                                    </div>
+
                                 </div>
                             </div>
-                        </div>
-                        <div className="flex align-items-center bg-white justify-content-center h-2rem bg-white-500 text-black m-1">
-                            <ul>
-                                <li id="errorWallet"></li>
-                            </ul>
                         </div>
                     </div>
                 </div>
