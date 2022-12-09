@@ -404,7 +404,7 @@ contract Rock is ERC1155, ERC2981, Ownable, ReentrancyGuard {
     }
 
     /// Returns the latest price MATIC/USD
-    function getLatestPrice() public view returns (uint256) {
+    function getLatestPrice() public view returns (int256) {
         (
             ,
             /*uint80 roundID*/
@@ -413,25 +413,12 @@ contract Rock is ERC1155, ERC2981, Ownable, ReentrancyGuard {
             ,
 
         ) = priceFeed.latestRoundData();
-        uint8 decimals = priceFeed.decimals();
-        uint256 _price = uint256(price);
-        return _price / (10**decimals);
-        //return _price;
-        // return _amount / maticPrice;
+        return price;
     }
 
     function withdraw() public onlyOwner {
         require(address(this).balance > 0, "Balance a 0");
         payable(owner()).transfer(address(this).balance);
-    }
-
-    // Récupération de la paire MATIC / USD via Chainlink
-    function getLastPairMaticUsd(uint256 _amount)
-        public
-        view
-        returns (uint256)
-    {
-        return getLatestPrice();
     }
 
     function getOwner() public view returns (address) {
