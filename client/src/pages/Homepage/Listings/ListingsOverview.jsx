@@ -10,7 +10,7 @@ export default function ListingsOverview() {
 
     const [realEstateArray, setRealEstateArray] = useState([]);
     const [realEstateCount, setRealEstateCount] = useState([]);
-    const [mintedRealEstateCount, setMintedRealEstateCount] = useState([]);
+    const [mintedRealEstateCount, setMintedRealEstateCount] = useState(0);
 
     const [infosCards, setInfosCards] = useState({});
     const [uri, setURI] = useState([]);

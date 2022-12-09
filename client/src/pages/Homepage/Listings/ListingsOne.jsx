@@ -31,7 +31,7 @@ export default function ListingsOne() {
 
     useEffect(() => {
         fetchCard();
-    }, [contract]);
+    }, []);
 
     async function findRealEstateInCollection() {
         try {
@@ -77,19 +77,8 @@ export default function ListingsOne() {
                     <div class="field col">
                         <RealEstateView realEstate={realEstate} uri={uri} infosCards={infosCards} />
                     </div>
-
-                    <div class="field col">
-                        <div className="form-demo">
-                            <div className="flex justify-content-center">
-                                <div className="card">
-                                    <h5 className="text-start">Investissez AUTREMENT avve ROCK</h5>
-                                    <div>
-                                        <NFTCard realEstate={realEstate} uri={uri} infosCards={infosCards} carteCottage={carteCottage} carteVilla={carteVilla} carteMansion={carteMansion} carteHighRise={carteHighRise} />
-                                    </div>
-
-                                </div>
-                            </div>
-                        </div>
+                    <div class="field col mt-2">
+                        <NFTCard realEstate={realEstate} uri={uri} infosCards={infosCards} carteCottage={carteCottage} carteVilla={carteVilla} carteMansion={carteMansion} carteHighRise={carteHighRise} />
                     </div>
                 </div>
             </div>
