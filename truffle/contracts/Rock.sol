@@ -365,39 +365,6 @@ contract Rock is ERC1155, ERC2981, Ownable, ReentrancyGuard {
         return card;
     }
 
-    // Retourne le prix total des cartes à payer (en MATIC)
-    function calculeTotalPrice(
-        uint256 _indexRealEstateInCollection,
-        uint256[] calldata _cardsId,
-        uint256[] calldata _amounts
-    ) public view returns (uint256) {
-        require(_amounts.length > 0, "Aucun montant renseigne");
-        require(_cardsId.length > 0, "Aucun carte selectionnee");
-        require(
-            _indexRealEstateInCollection < realEstatesCollection.length,
-            "Bien immobilier inexistant"
-        );
-
-        // 3 cartes COTTAGE de 50 € et 1 carte VILLA à 100 € = 3 * 50 + 1 * 100 = 250 = totalAmount
-        uint256 totalAmount;
-
-        for (uint256 i = 0; i < _cardsId.length; i++) {
-            require(
-                _cardsId[i] >= CARD_COTTAGE && _cardsId[i] <= CARD_HIGH_RISE,
-                "Carte inconnue"
-            );
-            uint256 boughtCardId = _cardsId[i];
-            // amount = price * quantity
-            totalAmount +=
-                cards[_indexRealEstateInCollection][boughtCardId].price *
-                _amounts[i];
-        }
-
-        // Calcul du nombre de tokens MATIC à nous reverser au total
-        // return amountOfMATIC(totalAmount);
-        return totalAmount;
-    }
-
     // Frais de transactions de la plateforme ROCK
     function setFee(uint256 _fee) public onlyOwner {
         fees = _fee;

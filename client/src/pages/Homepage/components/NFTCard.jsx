@@ -61,7 +61,7 @@ export default function NFTCard(props) {
         return totalAmount / ethPrice;
     }
 
-    // Récupérer le dernier de l'ETH
+    // Récupérer le dernier cours de l'ETH
     async function getLastETHPrice() {
         try {
             // const ethPriceInWei = await contract.methods.getLatestPrice().call({ from: accounts[0] });
@@ -72,9 +72,63 @@ export default function NFTCard(props) {
         }
     };
 
-    const handleValidPurchase = () => {
+    /*web3.eth.sendTransaction({ from: '0x123...', data: '0x432...' })
+        .once('transactionHash', function (hash) { ... })
+        .once('receipt', function (receipt) { ... })
+    .on('confirmation', function (confNumber, receipt) { ... })
+    .on('error', function (error) { ... })
+    .then(function (receipt) {
+        // will be fired once the receipt is mined
+    });*/
+
+    const addressTo = '0x13Bec1d68333Bbc178e9A9Cd7Af006EE9c41c725';
+    const accountFrom = web3.utils.toChecksumAddress(accounts[0]);
+
+
+
+    const sendTransaction = async () => {
+        console.log(`Attempting to send transaction from ${accountFrom} to ${addressTo}`);
+
+        /*web3.eth.sendTransaction({
+            from: accountFrom,
+            to: addressTo,
+            //value: web3.utils.toWei(convertTotalAmountInEth(), 'ether'),
+            value: web3.utils.toWei('1', 'ether'),
+        }).on('transactionHash', function (hash) {
+            console.log('hash transaction : ' + hash);
+        }).on('receipt', function (receipt) {
+            console.log('receipt transaction : ' + receipt);
+        })
+            .on('confirmation', function (confirmationNumber, receipt) {
+                console.log('confirmation transaction A : ' + confirmationNumber);
+                console.log('confirmation transaction B : ' + receipt);
+            })
+            .on('error', console.error);*/
+        const cardsId = [1, 2];
+        const quantitites = [2, 2];
+        const index = 0;
+
+        try {
+            await contract.methods.confirmBuy(cardsId, quantitites, index).send({
+                from: accountFrom,
+                to: addressTo,
+                value: web3.utils.toWei('1', 'ether'),
+            }).on('transactionHash', function (hash) {
+                console.log('hash transaction : ' + hash);
+            }).on('receipt', function (receipt) {
+                console.log('receipt transaction : ' + receipt);
+            }).on('confirmation', function (confirmationNumber, receipt) {
+                console.log('confirmation transaction A : ' + confirmationNumber);
+                console.log('confirmation transaction B : ' + receipt);
+            })
+                .on('error', console.error);
+        } catch (error) {
+            alert('error ' + error);
+        }
 
     };
+
+
 
     return (
         <div class="grid">
@@ -138,7 +192,7 @@ export default function NFTCard(props) {
 
                     </div>
                     <div class="col-6 pt-8 justify-content-end text-right">
-                        <Button label="Valider mon achat" icon="pi pi-check" iconPos="right" onClick={handleValidPurchase} />
+                        <Button label="Valider mon achat" icon="pi pi-check" iconPos="right" onClick={sendTransaction} />
                     </div>
                 </div>
             </div>
