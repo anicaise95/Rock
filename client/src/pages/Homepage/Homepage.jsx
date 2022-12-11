@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { Button } from 'primereact/button';
 import { NavLink } from "react-router-dom";
 //import styles from "./Homepage.module.scss";
-import schema from "../../asset/images/schema.jpg";
+import schema from "../../asset/images/schema.png";
 
 export default function Homepage() {
 
