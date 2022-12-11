@@ -21,9 +21,10 @@ function EthProvider({ children }) {
         } catch (err) {
           console.error(err);
         }
+        const owner = await contract.methods.owner().call({ from: accounts[0] });
         dispatch({
           type: actions.init,
-          data: { artifact, web3, accounts, networkID, contract }
+          data: { artifact, web3, accounts, networkID, contract, owner }
         });
       }
     }, []);
@@ -31,7 +32,7 @@ function EthProvider({ children }) {
   useEffect(() => {
     const tryInit = async () => {
       try {
-        const artifact = require("../../contracts/Rock.json");
+        const artifact = require("../../contracts/Marketplace.json");
         init(artifact);
       } catch (err) {
         console.error(err);

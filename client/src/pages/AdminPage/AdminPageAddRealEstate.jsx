@@ -100,13 +100,13 @@ export default function AdminPageAddRealEstate(props) {
         let errors = {};
 
         if (!data.realEstateName) {
-            errors.realEstateName = 'Le nom du programme est nécessaire';
+            errors.realEstateName = 'Le titre de la fiche est nécessaire';
         }
         if (!data.realEstateStreet) {
-            errors.realEstateStreet = 'La rue du bien est nécessaire';
+            errors.realEstateStreet = 'La description est nécessaire';
         }
         if (!data.realEstateCity) {
-            errors.realEstateCity = 'La ville du bien est nécessaire';
+            errors.realEstateCity = 'Autres informations nécessaires';
         }
         if (!data.realEstateCid) {
             errors.realEstateCid = 'Le path vers les images du bien est nécessaire';
@@ -160,7 +160,7 @@ export default function AdminPageAddRealEstate(props) {
 
                 <div className="flex justify-content-center">
                     <div className="card">
-                        <h5 className="text-center text-lg font-bold text-left">Etape 1/2 : Nouveau bien immobilier</h5>
+                        <h5 className="text-center text-lg font-bold text-left">Ajout d'un nouveau bien immobilier</h5>
 
                         <Form onSubmit={handleSubmitForm} initialValues={{ realEstateName: '', realEstateStreet: '', realEstateCity: '', realEstateCid: '', realEstatePrice: '' }} validate={validate} render={({ handleSubmit }) => (
 
@@ -170,7 +170,7 @@ export default function AdminPageAddRealEstate(props) {
                                     <div className="field">
                                         <span className="p-float-label">
                                             <InputText id="realEstateName" {...input} autoFocus className={classNames({ 'p-invalid': isFormFieldValid(meta) })} />
-                                            <label htmlFor="realEstateName" className={classNames({ 'p-error': isFormFieldValid(meta) })}>Nom du programme *</label>
+                                            <label htmlFor="realEstateName" className={classNames({ 'p-error': isFormFieldValid(meta) })}>Titre de la fiche : *</label>
                                         </span>
                                         {getFormErrorMessage(meta)}
                                     </div>
@@ -180,7 +180,7 @@ export default function AdminPageAddRealEstate(props) {
                                     <div className="field">
                                         <span className="p-float-label">
                                             <InputText id="realEstateStreet" {...input} autoFocus className={classNames({ 'p-invalid': isFormFieldValid(meta) })} />
-                                            <label htmlFor="realEstateStreet" className={classNames({ 'p-error': isFormFieldValid(meta) })}>Numéro / Rue *</label>
+                                            <label htmlFor="realEstateStreet" className={classNames({ 'p-error': isFormFieldValid(meta) })}>Description du bien : *</label>
                                         </span>
                                         {getFormErrorMessage(meta)}
                                     </div>
@@ -190,7 +190,7 @@ export default function AdminPageAddRealEstate(props) {
                                     <div className="field">
                                         <span className="p-float-label">
                                             <InputText id="realEstateCity" {...input} autoFocus className={classNames({ 'p-invalid': isFormFieldValid(meta) })} />
-                                            <label htmlFor="realEstateCity" className={classNames({ 'p-error': isFormFieldValid(meta) })}>Ville *</label>
+                                            <label htmlFor="realEstateCity" className={classNames({ 'p-error': isFormFieldValid(meta) })}>Informations sur le bien : *</label>
                                         </span>
                                         {getFormErrorMessage(meta)}
                                     </div>

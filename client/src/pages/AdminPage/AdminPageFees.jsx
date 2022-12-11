@@ -19,6 +19,11 @@ export default function AdminPageFees() {
             <div className="card">
                 <h2>Configuration des frais de la plateforme</h2>
             </div>
+            <div>
+                <span className='font-bold text-white'>
+                    Cette fonctionnalité n'est malheureusement pas implémentée pour le moment :(
+                </span>
+            </div>
         </>
     );
 }

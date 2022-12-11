@@ -1,7 +1,11 @@
+import React, { useEffect, useState, useRef } from 'react';
+import useEth from "./../../../contexts/EthContext/useEth";
 import { Outlet } from 'react-router-dom';
 import { NavLink } from "react-router-dom";
 
 export default function Listings() {
+
+    const { state: { owner, accounts } } = useEth();
 
     return (
         <>
@@ -13,7 +17,12 @@ export default function Listings() {
                             <li className="mr-3"><NavLink end to="" ><b>Catalogue immobilier</b></NavLink></li>
                             <li className="mr-3"><NavLink to="/marketplace" >Marketplace</NavLink></li>
                             <li className="mr-3"><NavLink to="/profile">Mon compte</NavLink></li>
-                            <li className=""><NavLink to="/admin">Administration</NavLink></li>
+                            <>
+                                {
+                                    owner == accounts[0] &&
+                                    <li className=""><NavLink to="/admin">Administration</NavLink></li>
+                                }
+                            </>
                         </ul>
                         <div className='p-20'>
                             <Outlet />

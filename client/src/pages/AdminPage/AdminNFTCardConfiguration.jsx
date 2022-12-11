@@ -50,6 +50,7 @@ export default function AdminNFTCardConfiguration() {
             // Ici le call avant le send permet de recupérer les require
             //await contract.methods.calculateNumberOfTokens(id, false, ratioCottage, ratioVilla, ratioMansion, cottageCardPrice, villaCardPrice, mansionCardPrice, highRiseCardPrice).call({ from: accounts[0] });
             //alert('calculateNumberOfTokens 1');
+            await contract.methods.calculateNumberOfTokens(id, false, ratioCottage, ratioVilla, ratioMansion, cottageCardPrice, villaCardPrice, mansionCardPrice, highRiseCardPrice).call({ from: accounts[0] })
             await contract.methods.calculateNumberOfTokens(id, false, ratioCottage, ratioVilla, ratioMansion, cottageCardPrice, villaCardPrice, mansionCardPrice, highRiseCardPrice).send({ from: accounts[0] })
                 .on('transactionHash', function (hash) {
                     console.log(hash);
@@ -65,34 +66,35 @@ export default function AdminNFTCardConfiguration() {
         }
     }
 
-    /*
-    function convertWeiToEth(weiValue) {
-        return web3.utils.fromWei(weiValue, 'ether');
-    }
-
-    function convertEthToWei(ethValue) {
-        return web3.utils.toWei(ethValue, 'ether');
-    }*/
-
     const validate = (data) => {
         let errors = {};
 
-        /*
-        if (!data.realEstateName) {
-            errors.realEstateName = 'Le nom du programme est nécessaire';
+        if (!data.ratioCottage) {
+            errors.ratioCottage = 'Le ratio Cottage est nécessaire';
         }
-        if (!data.realEstateStreet) {
-            errors.realEstateStreet = 'La rue du bien est nécessaire';
+        if (!data.ratioVilla) {
+            errors.ratioVilla = 'Le ratio Villa est nécessaire';
         }
-        if (!data.realEstateCity) {
-            errors.realEstateCity = 'La ville du bien est nécessaire';
-        }*/
+        if (!data.ratioMansion) {
+            errors.ratioMansion = 'Le ratio Mansion est nécessaire';
+        }
 
+        if (!data.cottageCardPrice) {
+            errors.cottageCardPrice = 'Le prix Cottage est nécessaire';
+        }
+        if (!data.villaCardPrice) {
+            errors.villaCardPrice = 'Le prix Villa est nécessaire';
+        }
+        if (!data.mansionCardPrice) {
+            errors.mansionCardPrice = 'Le prix Mansion est nécessaire';
+        }
+        if (!data.highRiseCardPrice) {
+            errors.highRiseCardPrice = 'Le prix High Rise est nécessaire';
+        }
         return errors;
     };
 
     const onClickHandleMessageOK = () => {
-        //setShowMessage(false);
     }
 
     useEffect(() => {

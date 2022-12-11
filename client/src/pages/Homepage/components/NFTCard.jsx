@@ -15,10 +15,9 @@ import imgCarteMansion from './../../../asset/images/NFTCards/3.jpg';
 import imgCarteHighRise from './../../../asset/images/NFTCards/4.jpg';
 import logo_eth from './../../../asset/images/ethereum-eth-logo.png';
 
-
 export default function NFTCard(props) {
 
-    const { state: { contract, accounts, web3 } } = useEth();
+    const { state: { contract, accounts, web3, owner, networkID } } = useEth();
 
     const [cottageMetadatas, setCottageMetadatas] = useState({});
     const [villaMetadatas, setVillaMetadatas] = useState({});
@@ -31,6 +30,8 @@ export default function NFTCard(props) {
     const [qtyHighRise, setQtyHighRise] = useState(0);
 
     const [totalAmount, setTotalAmount] = useState(0);
+    const [plateformFees, setPlateformFees] = useState(2);
+    const [totalfees, setTotalfees] = useState(2);
     const [lastPairETHusdPrice, setLastPairETHusdPrice] = useState(0);
 
     const realEstateParam = props.realEstate;
@@ -42,93 +43,137 @@ export default function NFTCard(props) {
     const carteMansion = props.carteMansion;
     const carteHighRise = props.carteHighRise;
 
+    const network = '1670746639301';
+    //setPlateformFees(getPlateformFees());
+
+    useEffect(() => {
+        getPlateformFees();
+        getLastETHPrice();
+    }, [plateformFees]);
+
     // Calcule le prix total à payer
     const calculeTotalAmount = () => {
         const totalAmount = qtyCottage * carteCottage.price
             + qtyVilla * carteVilla.price
             + qtyMansion * carteMansion.price
             + qtyHighRise * carteHighRise.price;
+
         setTotalAmount(totalAmount);
-        if (lastPairETHusdPrice == 0)
-            getLastETHPrice();
-        document.getElementById('totalAmount').innerHTML = totalAmount;
+
+        // if (lastPairETHusdPrice == 0)
+        // getLastETHPrice();
+
+        if (plateformFees > 0 && totalAmount > 0)
+            setTotalfees(totalAmount * (plateformFees / 100));
+
+        document.getElementById('totalAmount').innerHTML = (totalAmount > 0 ? totalAmount + totalfees : 0);
         document.getElementById('totalAmountInEth').innerHTML = swapTotalAmountInEth();
     };
 
     // Convertir le prix total à payer en ETH
     const swapTotalAmountInEth = () => {
         const ethPrice = lastPairETHusdPrice / (10 ** 8);
-        return totalAmount / ethPrice;
+        return (totalAmount + totalfees) / ethPrice;
     }
 
-    // Récupérer le dernier cours de l'ETH
-    async function getLastETHPrice() {
+    async function getPlateformFees() {
         try {
-            // const ethPriceInWei = await contract.methods.getLatestPrice().call({ from: accounts[0] });
-            const ethPriceInWei = 127428811611;
-            setLastPairETHusdPrice(ethPriceInWei);
+            const plateformFees = await contract.methods.plateformFees().call({ from: accounts[0] });
+            if (plateformFees == 0) {
+                plateformFees = 3;
+            }
+            setPlateformFees(plateformFees);
         } catch (error) {
             //alert(error);
         }
     };
 
-    /*web3.eth.sendTransaction({ from: '0x123...', data: '0x432...' })
-        .once('transactionHash', function (hash) { ... })
-        .once('receipt', function (receipt) { ... })
-    .on('confirmation', function (confNumber, receipt) { ... })
-    .on('error', function (error) { ... })
-    .then(function (receipt) {
-        // will be fired once the receipt is mined
-    });*/
+    // Récupérer le dernier cours de l'ETH
+    async function getLastETHPrice() {
+        try {
+            console.log('LastPairETHusdPrice avant');
+            const ethPriceInWei = await contract.methods.getLatestPrice().call({ from: accounts[0] });
+            console.log('LastPairETHusdPrice : ' + ethPriceInWei);
+            setLastPairETHusdPrice(ethPriceInWei);
+        } catch (error) {
+            console.log("Impossible de récupérer le dernier prix de l'ETH");
+            setLastPairETHusdPrice(127428811611);
+        }
+    };
 
-    const addressTo = '0x13Bec1d68333Bbc178e9A9Cd7Af006EE9c41c725';
-    const accountFrom = web3.utils.toChecksumAddress(accounts[0]);
-
-
+    console.log('networkID : ' + networkID);
 
     const sendTransaction = async () => {
-        console.log(`Attempting to send transaction from ${accountFrom} to ${addressTo}`);
 
-        /*web3.eth.sendTransaction({
-            from: accountFrom,
-            to: addressTo,
-            //value: web3.utils.toWei(convertTotalAmountInEth(), 'ether'),
-            value: web3.utils.toWei('1', 'ether'),
-        }).on('transactionHash', function (hash) {
-            console.log('hash transaction : ' + hash);
-        }).on('receipt', function (receipt) {
-            console.log('receipt transaction : ' + receipt);
-        })
-            .on('confirmation', function (confirmationNumber, receipt) {
-                console.log('confirmation transaction A : ' + confirmationNumber);
-                console.log('confirmation transaction B : ' + receipt);
-            })
-            .on('error', console.error);*/
-        const cardsId = [1, 2];
-        const quantitites = [2, 2];
+        const tokensId = new Array();
+        const quantitites = new Array();
+
+        if (qtyCottage > 0) {
+            tokensId.push(carteCottage.tokenId);
+            quantitites.push(qtyCottage);
+        }
+
+        if (qtyVilla > 0) {
+            tokensId.push(carteVilla.tokenId);
+            quantitites.push(qtyVilla);
+        }
+
+        if (qtyMansion > 0) {
+            tokensId.push(carteMansion.tokenId);
+            quantitites.push(qtyMansion);
+        }
+
+        if (qtyHighRise > 0) {
+            tokensId.push(carteHighRise.tokenId);
+            quantitites.push(qtyHighRise);
+        }
+
         const index = 0;
 
         try {
-            await contract.methods.confirmBuy(cardsId, quantitites, index).send({
-                from: accountFrom,
-                to: addressTo,
-                value: web3.utils.toWei('1', 'ether'),
-            }).on('transactionHash', function (hash) {
-                console.log('hash transaction : ' + hash);
-            }).on('receipt', function (receipt) {
-                console.log('receipt transaction : ' + receipt);
-            }).on('confirmation', function (confirmationNumber, receipt) {
-                console.log('confirmation transaction A : ' + confirmationNumber);
-                console.log('confirmation transaction B : ' + receipt);
-            })
-                .on('error', console.error);
+            // const owner = await contract.methods.owner().call({ from: accounts[0] });
+            const accountFrom = web3.utils.toChecksumAddress(accounts[0]);
+
+            console.log(`Attempting to send transaction from ${accountFrom} to ${owner}`);
+
+            //await contract.methods.setApprovalForAll(accounts[0], true).send({ from: owner });
+
+            console.log('accounts[0] : ', accounts[0]);
+            console.log('owner : ', owner);
+
+            console.log('tokensId : ' + tokensId);
+            console.log('quantitites : ' + quantitites);
+            console.log('index : ' + index);
+
+            const amountToPay = swapTotalAmountInEth();
+            const amount = amountToPay.toString();
+
+            if (amountToPay !== 'undefined' || amountToPay > 0) {
+                await contract.methods.confirmBuy(tokensId, quantitites, index).send({
+                    from: accounts[0],
+                    to: owner,
+                    value: web3.utils.toWei(amount, 'ether'),
+                    gas: web3.utils.toHex(300000),
+                }).on('transactionHash', function (hash) {
+                    console.log('hash transaction : ' + hash);
+                }).on('receipt', function (receipt) {
+                    console.log('receipt transaction : ' + receipt);
+                })
+                    .on('confirmation', function (confirmationNumber, receipt) {
+                        console.log('confirmation transaction A : ' + confirmationNumber);
+                        console.log('confirmation transaction B : ' + receipt);
+                    })
+                    .on('error', console.error);
+            } else {
+                alert('Aucune carte achetée !');
+            }
+
+            //await contract.methods.setApprovalForAll(accounts[0], false).send({ from: owner });
+
         } catch (error) {
-            alert('error ' + error);
+            //alert('error ' + error);
         }
-
     };
-
-
 
     return (
         <div class="grid">
@@ -136,7 +181,7 @@ export default function NFTCard(props) {
             <div class="col-12 headerNFT">
                 <div class="grid">
 
-                    <div className='pb-4 col-12'><div className='pb-4 col-12'>Le Lorem Ipsum est simplement du faux texte employé dans la composition et la mise en page avant impression. Le Lorem Ipsum est le faux texte standard de l'imprimerie depuis les années 1500, quand un imprimeur anonyme assembla ensemble des morceaux de texte pour réaliser un livre spécimen de polices de texte</div></div>
+                    <div className='pb-4 col-12'><div className='pb-2 col-12'>Le Lorem Ipsum est simplement du faux texte employé dans la composition et la mise en page avant impression. Le Lorem Ipsum est le faux texte standard de l'imprimerie depuis les années 1500, quand un imprimeur anonyme assembla ensemble des morceaux de texte pour réaliser un livre spécimen de polices de texte</div></div>
 
                     <div class="col-6">Autre(s) information(s) sur le bien : </div>
                     <div class="col-6">Parc à proximité, écoles, secteur dynamique</div>
@@ -147,6 +192,8 @@ export default function NFTCard(props) {
                     <div class="col-6">Montants des loyers : </div>
                     <div class="col-6">1 345 €</div>
 
+                    <div class="col-6 text-green-500">Frais de gestion : </div>
+                    <div class="col-6 text-green-500 font-bold ">{plateformFees} % *</div>
                     <div class="col-6 font-bold text-white pt-2">Rendement estimé à l'année * : </div>
                     <div class="col-6 font-bold text-white pt-2">5 %</div>
                 </div>
@@ -183,6 +230,7 @@ export default function NFTCard(props) {
                     <div class="col-6 pt-6">
                         <div>
                             <span>Montant total à payer : </span><span className='font-bold text-white' id='totalAmount' /><span className='font-bold text-white'> €</span>
+                            <span class="col-6 text-green-500 font-bold "> *</span>
                         </div>
                         <div>
                             <img src={logo_eth} className='logo_eth' />
@@ -191,8 +239,9 @@ export default function NFTCard(props) {
                         </div>
 
                     </div>
-                    <div class="col-6 pt-8 justify-content-end text-right">
-                        <Button label="Valider mon achat" icon="pi pi-check" iconPos="right" onClick={sendTransaction} />
+                    <div id="btnConfirmPay" class="col-6 pt-8 justify-content-end text-right">
+                        <Button hidden={!networkID === network} label="Valider mon achat" icon="pi pi-check" iconPos="right" onClick={sendTransaction} />
+                        <span hidden={!networkID !== network} id="labelNotConnected" className='font-bold text-white'>Veuillez vous connecter au réseau Ethereum !</span>
                     </div>
                 </div>
             </div>

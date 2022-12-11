@@ -5,7 +5,7 @@ import useEth from "./../../contexts/EthContext/useEth";
 
 export default function AdminPage() {
 
-
+    const { state: { owner, accounts } } = useEth();
 
     return (
         <>
@@ -17,7 +17,12 @@ export default function AdminPage() {
                             <div>
                                 <ul className="d-flex pt-20">
                                     <li className="mr-3"><NavLink end to="/listings" >Catalogue immobilier</NavLink></li>
-                                    <li className="mr-3"><NavLink end to="" ><b>Administration</b></NavLink></li>
+                                    <>
+                                        {
+                                            owner == accounts[0] &&
+                                            <li className="mr-3"><NavLink end to="" ><b>Administration</b></NavLink></li>
+                                        }
+                                    </>
                                 </ul>
                             </div>
 

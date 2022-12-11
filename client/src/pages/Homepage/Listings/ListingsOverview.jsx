@@ -6,7 +6,7 @@ import RealEstateView from '../../Homepage/components/RealEstateView';
 
 export default function ListingsOverview() {
 
-    const { state: { contract, accounts, web3 } } = useEth();
+    const { state: { contract, accounts, web3, owner } } = useEth();
 
     const [realEstateArray, setRealEstateArray] = useState([]);
     const [realEstateCount, setRealEstateCount] = useState([]);
@@ -22,7 +22,7 @@ export default function ListingsOverview() {
         if (contract != null) {
             fetchRealEstatesCollection();
         }
-    }, [contract, realEstateCount, mintedRealEstateCount]);
+    }, [realEstateCount]);
 
     async function fetchRealEstatesCollection() {
         try {
@@ -32,11 +32,11 @@ export default function ListingsOverview() {
             console.log("Nombre de biens immobiliers gérés par ROCK : " + count);
 
             const realEstateArray = Array();
+            const isRealEstateMinted = Array();
+            setIsRealEstateMinted(isRealEstateMinted);
             for (let index = 0; index < count; index++) {
                 realEstateArray.push(await contract.methods.realEstatesCollection(index).call({ from: accounts[0] }));
                 // Liste des biens mintés (pour les afficher)
-                const isRealEstateMinted = Array();
-                setIsRealEstateMinted(isRealEstateMinted);
                 fetchCard(index);
             }
             console.log("Liste des biens immobiliers : " + realEstateArray);
@@ -76,6 +76,7 @@ export default function ListingsOverview() {
             cards.push(carteVilla);
             cards.push(carteMansion);
             cards.push(carteHighRise);
+
             setInfosCards(cards);
 
         } catch (error) {
@@ -86,7 +87,7 @@ export default function ListingsOverview() {
     return (
         <>
             <div class="card">
-                <div className='d-flex text-lg text-cyan-900 align-content-end justify-content-end pt-50'><b>{mintedRealEstateCount}  bien(s) immobilier(s)</b> actuellement disponible(s)</div>
+                <div className='d-flex text-lg text-white align-content-end justify-content-end pt-50'><b>Liste des biens immobiliers</b> actuellement disponibles</div>
                 <div class="grid">
                     <>
                         {

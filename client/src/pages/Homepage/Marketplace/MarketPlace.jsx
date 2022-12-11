@@ -1,7 +1,10 @@
 import { Outlet } from 'react-router-dom';
 import { NavLink } from "react-router-dom";
+import useEth from "./../../../contexts/EthContext/useEth";
 
 export default function MarketPlace() {
+
+    const { state: { accounts, owner } } = useEth();
 
     return (
         <>
@@ -13,7 +16,12 @@ export default function MarketPlace() {
                             <li className="mr-3"><NavLink to="/listings" >Catalogue immobilier</NavLink></li>
                             <li className="mr-3"><NavLink end to="" ><b>Marketplace</b></NavLink></li>
                             <li className="mr-3"><NavLink to="/profile">Mon compte</NavLink></li>
-                            <li className=""><NavLink to="/admin">Administration</NavLink></li>
+                            <>
+                                {
+                                    owner == accounts[0] &&
+                                    <li className=""><NavLink to="/admin">Administration</NavLink></li>
+                                }
+                            </>
                         </ul>
                         <div className='p-20'>
                             <Outlet />

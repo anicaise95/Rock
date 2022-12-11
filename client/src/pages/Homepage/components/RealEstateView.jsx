@@ -22,21 +22,11 @@ export default function RealEstateView(props) {
     const [visible, setVisible] = useState(false);
     const toast = useRef(null);
 
-
-
-
     const subtitle = realEstateParam.city + '-' + realEstateParam.price + ' €'
     const navigateToRealEstateView = 'view/' + indexRealEstate;
 
-
-
-    // -------------- DIALOG -----------------------------
-
     function confirmMint() {
-
-        //if (confirm("Minter ce bien")) {
         mint(indexRealEstate);
-        //}
     };
 
     // ------------------- CHECK TRANSACTION --------------------
@@ -75,21 +65,6 @@ export default function RealEstateView(props) {
         }, 1000)
     }
 
-    /* 
-    useEffect(() => {
-       document.getElementById('buttonAddSubmit').hidden = true;
-        document.getElementById('buttonNextStep').hidden = true;
-        if (stateAddTransactionSuccess == 0) {
-            document.getElementById('buttonAddSubmit').hidden = false;
-            document.getElementById('buttonNextStep').hidden = true;
-        }
-        if (stateAddTransactionSuccess == 2) {
-            document.getElementById('buttonAddSubmit').hidden = true;
-            document.getElementById('buttonNextStep').hidden = false;
-        }
-    }, [stateAddTransactionSuccess]);
-    */
-
     async function mint(indexRealEstate) {
         try {
             await contract.methods.mintRealEstateCollection(indexRealEstate).send({ from: accounts[0] })
@@ -106,7 +81,6 @@ export default function RealEstateView(props) {
     const header = (
         <img alt="Card" src={realEstateParam.cid} onError={(e) => e.target.src = 'https://media.tenor.com/Tu0MCmJ4TJUAAAAM/load-loading.gif'} />
     );
-
 
     const footer = (
         <span>

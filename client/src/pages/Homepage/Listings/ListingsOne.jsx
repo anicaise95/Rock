@@ -9,7 +9,7 @@ export default function ListingsOne() {
 
     const { id } = useParams();
 
-    const { state: { contract, accounts } } = useEth();
+    const { state: { contract, accounts, owner } } = useEth();
     const [realEstate, setRealEstate] = useState({});
     const [indexRealEstate, setIndexRealEstate] = useState(id);
     const [infosCards, setInfosCards] = useState([]);

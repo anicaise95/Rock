@@ -10,8 +10,8 @@ function HomepageProxyWallet() {
         <>
             {
                 //!artifact ? <ComingSoon /> :
-                    //!contract ? <NoticeWrongNetwork /> :
-                        <Homepage />
+                !contract ? <NoticeWrongNetwork /> :
+                    <Homepage />
 
             }
         </>

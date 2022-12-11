@@ -13,7 +13,8 @@ contract Rock is ERC1155, ERC2981, Ownable, ReentrancyGuard {
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;
     Counters.Counter private _realEstateIds;
-    uint256 internal fees = 5000; // 5%
+
+    uint256 public plateformFees = 5; // 5%
 
     // Nom de la collection ROCK (qui apparaitra sur Opensea
     string public name = "Rock Collection";
@@ -51,12 +52,10 @@ contract Rock is ERC1155, ERC2981, Ownable, ReentrancyGuard {
         address payable owner;
     }
 
-    NFTCard[] public Listings;
+    //NFTCard[] public Listings;
 
-    // Mapping realEstateId => tokenId --> TYpe de Carte
-    //mapping(uint256 => mapping(uint256 => Card)) private typesCard;
-    // Mapping realEstateId => tokenId => ownerAdress --> Card
-    mapping(uint256 => mapping(uint256 => mapping(address => NFTCard)))
+    // Cartes NFT detenues par les utilisateurs : Mapping realEstateId => ownerAdress => tokenId  --> Card
+    mapping(uint256 => mapping(address => mapping(uint256 => NFTCard)))
         public usersCardsNfts;
 
     // Index du bien => tableau de cartes
@@ -93,6 +92,7 @@ contract Rock is ERC1155, ERC2981, Ownable, ReentrancyGuard {
     {
         // Royalties sur chaque NFT vendu
         _setDefaultRoyalty(msg.sender, 8000);
+
         // Data Feed Chainlink pour récupérer le MATIC/USD
         priceFeed = AggregatorV3Interface(
             // 0xd0D5e3DB44DE05E9F294BB0a3bEEaF030DE24Ada
@@ -156,6 +156,7 @@ contract Rock is ERC1155, ERC2981, Ownable, ReentrancyGuard {
 
         // Evenement RealEstateAdd avec position de l'élément dans le tableau
         uint256 indexRealEstateInCollection = _realEstateIds.current() - 1;
+
         emit RealEstateAdded(indexRealEstateInCollection);
     }
 
@@ -167,7 +168,7 @@ contract Rock is ERC1155, ERC2981, Ownable, ReentrancyGuard {
 
     // Récupération du bien immobilier par son index
     function getRealStateById(uint256 _index)
-        public
+        external
         view
         returns (RealEstate memory)
     {
@@ -338,10 +339,10 @@ contract Rock is ERC1155, ERC2981, Ownable, ReentrancyGuard {
 
         // NFT qui seront listés sur la plateforme une fois le mint effectué
         // Par défaut tous les NTFS sont déténus par le owner du contrat
-        // realEstateId => tokenId => ownerAdress --> Card
+        // realEstateId => ownerAdress --> tokenId => Card
         NFTCard storage defaultOwner = usersCardsNfts[
             _indexRealEstateInCollection
-        ][newTokenId][contractOwner];
+        ][contractOwner][newTokenId];
         defaultOwner.tokenId = cards[_indexRealEstateInCollection][_cardId]
             .tokenId; // Identifiant de la carte mintée
         defaultOwner.price = cards[_indexRealEstateInCollection][_cardId].price; // Prix défini par l'administrateur
@@ -366,8 +367,12 @@ contract Rock is ERC1155, ERC2981, Ownable, ReentrancyGuard {
     }
 
     // Frais de transactions de la plateforme ROCK
-    function setFee(uint256 _fee) public onlyOwner {
-        fees = _fee;
+    function setPlateformFees(uint256 _fee) public onlyOwner {
+        require(
+            _fee > 0 && _fee <= 10,
+            "Les frais doivent etre compris entre 0 et 10 pourcents"
+        );
+        plateformFees = _fee;
     }
 
     /// Returns the latest price MATIC/USD
