@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC1155/ERC1155.sol";
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/common/ERC2981.sol";
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/Counters.sol";
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/introspection/ERC165.sol";
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/Ownable.sol";
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/security/ReentrancyGuard.sol";
-import "https://github.com/smartcontractkit/chainlink/blob/develop/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+import "../node_modules/@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
+import "../node_modules/@openzeppelin/contracts/token/common/ERC2981.sol";
+import "../node_modules/@openzeppelin/contracts/utils/Counters.sol";
+//import "../node_modules/@openzeppelin/contracts/utils/introspection/ERC165.sol";
+import "../node_modules/@openzeppelin/contracts/access/Ownable.sol";
+import "../node_modules/@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "../node_modules/@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 
 /// @title Contrat d'administration de la plateforme ROCK
@@ -87,7 +87,7 @@ contract Rock is ERC1155, ERC2981, Ownable, ReentrancyGuard {
         uint256 supplyHighRise
     );
     event tokenMinted(uint256 idRealEstate);
-    event RealEstateAdded(uint256 idRealEstate);
+    event RealEstateAddnnvgbed(uint256 idRealEstate);
 
     AggregatorV3Interface internal priceFeed;
 
@@ -116,7 +116,7 @@ contract Rock is ERC1155, ERC2981, Ownable, ReentrancyGuard {
     /// @param _cid URL de l'image du bien
     /// @param _price Prix du bien immobilier
 
-    function addRealEstate (string memory _name, string memory _location, string memory _city, string memory _cid, uint256 _price) public onlyOwner {
+    function addRealEstate (string memory _name, string memory _location, string memory _city, string memory _cid, uint256 _price) public  {
 
         require(keccak256(abi.encode(_name)) != keccak256(abi.encode("")), "Le nom du programme immobilier est obligatoire" );
         require(keccak256(abi.encode(_location)) != keccak256(abi.encode("")), "La situation est obligatoire");
@@ -195,7 +195,7 @@ contract Rock is ERC1155, ERC2981, Ownable, ReentrancyGuard {
 
         /// Création des cartes NFT
         Card[4] storage newCards    = cards[_indexRealEstateInCollection];
-        newCards[CARD_COTTAGE]      = Card( CARD_COTTAGE, 0, _prixTokenCottage, 0, _ratioTokenCottage, 30, 0);
+        newCards[CARD_COTTAGE]      = Card(CARD_COTTAGE, 0, _prixTokenCottage, 0, _ratioTokenCottage, 30, 0);
         newCards[CARD_VILLA]        = Card(CARD_VILLA, 0, _prixTokenVilla, 0,_ratioTokenVilla, 30, 0);
         newCards[CARD_MANSION]      = Card(CARD_MANSION, 0, _prixTokenMansion, 0, _ratioTokenMansion, 30, 0);
         newCards[CARD_HIGH_RISE]    = Card(CARD_HIGH_RISE, 0, _prixTokenHighRise, 1, 0, 30, 0);

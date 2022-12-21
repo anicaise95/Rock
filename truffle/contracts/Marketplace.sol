@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC1155/IERC1155.sol";
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/Counters.sol";
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/Ownable.sol";
-import "https://github.com/smartcontractkit/chainlink/blob/develop/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/security/ReentrancyGuard.sol";
+import "../node_modules/@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
+import "../node_modules/@openzeppelin/contracts/utils/Counters.sol";
+import "../node_modules/@openzeppelin/contracts/access/Ownable.sol";
+import "../node_modules/@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+import "../node_modules/@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 import "./Rock.sol";
 
@@ -77,11 +77,11 @@ contract Marketplace is Rock {
     /// @param _indexRealEstateInCollection Index du bien immobilier
     function distributeTokens (address buyer, address seller, uint256[] calldata _tokenIds, uint256[] calldata _quantities, uint256 _indexRealEstateInCollection) private { 
 
-        /// Les tokens appartenant à l'owner, il est nécessaire d'approuver le buyer pour que le transfert puisse se faire ->>> NE FONCTIONNE PAS - Mauvaise implémentation du contrat ??
+        /// Les tokens appartenant à l'owner, il est nécessaire d'approuver le buyer pour que le transfert puisse se faire
         _setApprovalForAll(buyer, seller, true);
 
         /// Transfert des tokens vers l'acheteur
-        safeBatchTransferFrom(seller, buyer, _tokenIds, _quantities, "");
+        _safeBatchTransferFrom(seller, buyer, _tokenIds, _quantities, "");
 
         /// MAJ des balances
        for (uint256 i = 0; i < _tokenIds.length; i++) {
@@ -100,17 +100,19 @@ contract Marketplace is Rock {
         }
     }
 
-    /// @notice Afficher la liste des tokens détenues par un investisseur
+    /// @notice Afficher la liste des tokens détenus par un investisseur
     /// @param _indexRealEstateInCollection Index du bien immobilier
-    /// @param account Compte de l'investisseur 
-    function fetchMyNfts(uint256 _indexRealEstateInCollection, address account) public view returns (NFTCard[] memory) {
+    function fetchMyNfts(uint256 _indexRealEstateInCollection) public view returns (NFTCard[4] memory) {
         
-        NFTCard[] memory myNFTCards;
+        NFTCard[4] memory myNFTCards;
 
         // Récupération du solde des 4 cartes du bien immobilier passé en paramètre
-        for(uint tokenId = 1; tokenId <= 4; tokenId++){
-           myNFTCards[tokenId] = usersCardsNfts[_indexRealEstateInCollection][account][tokenId];  
+        uint idToken = 0;
+        for(uint i = 0; i < 4; i++){
+           idToken = i + 1; 
+           myNFTCards[i] = usersCardsNfts[_indexRealEstateInCollection][msg.sender][idToken];  
         }
+
         return myNFTCards;
     }
 
