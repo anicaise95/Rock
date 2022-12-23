@@ -9,7 +9,7 @@ import { Navigate, NavLink } from 'react-router-dom';
 
 export default function RealEstateView(props) {
 
-    const { state: { contract, accounts, web3 } } = useEth();
+    const { state: { contract, accounts, web3, owner } } = useEth();
 
     const realEstateParam = props.realEstate;
     const action = props.buttonAction;
@@ -88,8 +88,12 @@ export default function RealEstateView(props) {
                 {
                     <>
                         {
-                            action === 'minter' &&
+                            action === 'minter' && owner === accounts[0] && 
                             <Button onClick={confirmMint} icon="pi pi-check" label="Minter" />
+                        }
+                        {
+                            action !== 'consulter' && owner === accounts[0] &&
+                            <Button label="Modifier" icon="pi pi-times" className="p-button-secondary ml-2" />
                         }
                         {
                             action === 'consulter' &&
@@ -97,11 +101,13 @@ export default function RealEstateView(props) {
                                 <Button onClick="" icon="pi pi-check" label="Investir à partir de 50 €" />
                             </NavLink>
                         }
+                        {
+                            action === 'consulterMesNfts' &&
+                            <NavLink to={navigateToRealEstateView}>
+                                <Button onClick="" icon="pi pi-check" label="Consulter" />
+                            </NavLink>
+                        } 
                     </>
-                }
-                {
-                    action !== 'consulter' &&
-                    <Button label="Modifier" icon="pi pi-times" className="p-button-secondary ml-2" />
                 }
             </>
         </span>
