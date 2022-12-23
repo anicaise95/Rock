@@ -131,12 +131,9 @@ export default function NFTCard(props) {
         const index = 0;
 
         try {
-            // const owner = await contract.methods.owner().call({ from: accounts[0] });
             const accountFrom = web3.utils.toChecksumAddress(accounts[0]);
 
             console.log(`Attempting to send transaction from ${accountFrom} to ${owner}`);
-
-            //await contract.methods.setApprovalForAll(accounts[0], true).send({ from: owner });
 
             console.log('accounts[0] : ', accounts[0]);
             console.log('owner : ', owner);
@@ -167,9 +164,6 @@ export default function NFTCard(props) {
             } else {
                 alert('Aucune carte achetée !');
             }
-
-            //await contract.methods.setApprovalForAll(accounts[0], false).send({ from: owner });
-
         } catch (error) {
             //alert('error ' + error);
         }
@@ -240,8 +234,10 @@ export default function NFTCard(props) {
 
                     </div>
                     <div id="btnConfirmPay" class="col-6 pt-8 justify-content-end text-right">
-                        <Button hidden={!networkID === network} label="Valider mon achat" icon="pi pi-check" iconPos="right" onClick={sendTransaction} />
-                        <span hidden={!networkID !== network} id="labelNotConnected" className='font-bold text-white'>Veuillez vous connecter au réseau Ethereum !</span>
+                        <NavLink end to='/profile/' >
+                            <Button hidden={!networkID === network} label="Valider mon achat" icon="pi pi-check" iconPos="right" onClick={sendTransaction} />
+                            <span hidden={!networkID !== network} id="labelNotConnected" className='font-bold text-white'>Veuillez vous connecter au réseau Ethereum !</span>
+                        </NavLink>
                     </div>
                 </div>
             </div>
