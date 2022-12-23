@@ -88,21 +88,24 @@ contract Marketplace is Rock {
 
             // Mise à jour de la balance du vendeur
             NFTCard storage sellerTokens = usersCardsNfts[_indexRealEstateInCollection][seller][_tokenIds[i]];
+            sellerTokens.tokenId = _tokenIds[i];
             sellerTokens.quantity -= _quantities[i];
             sellerTokens.seller = payable(seller);
             sellerTokens.owner = payable(buyer);
 
             // Mise à jour de la balance de l'acheteur
-            NFTCard storage buyTokens = usersCardsNfts[_indexRealEstateInCollection][buyer][_tokenIds[i]];
-            buyTokens.quantity += _quantities[i];
-            buyTokens.seller = payable(buyer);
-            buyTokens.owner = payable(buyer);
+            NFTCard storage buyerTokens = usersCardsNfts[_indexRealEstateInCollection][buyer][_tokenIds[i]];
+            buyerTokens.tokenId = _tokenIds[i];
+            buyerTokens.quantity += _quantities[i];
+            buyerTokens.seller = payable(buyer);
+            buyerTokens.owner = payable(buyer);
         }
     }
 
     /// @notice Afficher la liste des tokens détenus par un investisseur
     /// @param _indexRealEstateInCollection Index du bien immobilier
     function fetchMyNfts(uint256 _indexRealEstateInCollection) public view returns (NFTCard[4] memory) {
+        require(_indexRealEstateInCollection >= 0 && _indexRealEstateInCollection < _realEstateIds.current(), "Le bien immobilier est inexistant");
         
         NFTCard[4] memory myNFTCards;
 
